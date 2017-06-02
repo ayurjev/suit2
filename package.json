@@ -1,0 +1,22 @@
+{
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "mocha": "^3.4.2"
+  },
+  "dependencies": {
+    "babel": "^6.23.0",
+    "babel-loader": "^7.0.0",
+    "babel-polyfill": "^6.23.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-register": "^6.24.1",
+    "babelify": "^7.3.0"
+  },
+  "browserify": {
+    "transform": [
+      "babelify"
+    ]
+  },
+  "scripts": {
+    "test": "mocha --compilers js:babel-register --require babel-polyfill"
+  }
+}
