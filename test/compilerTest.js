@@ -27,4 +27,28 @@ describe('Compiler', () => {
         );
     });
 
+    it('should support ternary operator for variables', () => {
+        let widget = c.compile('His name is <b>{$user.name}</b> and he is {$user.age < 18 ? young : old}');
+        assert.equal(
+            'His name is <b>Andrey</b> and he is young',
+            widget.render({user: {name: "Andrey", age: 14}})
+        );
+        assert.equal(
+            'His name is <b>Andrey</b> and he is old',
+            widget.render({user: {name: "Andrey", age: 28}})
+        );
+    });
+
+    it('should support ternary operator for variables (short version)', () => {
+        let widget = c.compile('His name is <b>{$user.name}</b>{$user.age < 18 ? and he is young}');
+        assert.equal(
+            'His name is <b>Andrey</b> and he is young',
+            widget.render({user: {name: "Andrey", age: 14}})
+        );
+        assert.equal(
+            'His name is <b>Andrey</b>',
+            widget.render({user: {name: "Andrey", age: 28}})
+        );
+    });
+
 });
