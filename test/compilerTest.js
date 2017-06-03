@@ -87,4 +87,29 @@ describe('Compiler', () => {
         );
     });
 
+    it('should short full and short syntax for if/else (multiline)', () => {
+        let widget1 = c.compile(`
+            His name is <b>{$user.name}</b>
+            {$user.age != null ?
+                and we know how old is he
+            }
+        `);
+        assert.equal(
+            'His name is <b>Andrey</b> and we know how old is he',
+            widget1.render({user: {name: "Andrey", age: 14}})
+        );
+
+        let widget2 = c.compile(`
+            His name is <b>{$user.name}</b>
+            {$user.age != null ?
+                and we know how old is he ($user.age)
+                : and we don't know how old is he ($user.age || unknown)
+            }
+        `);
+        assert.equal(
+            `His name is <b>Andrey</b> and we don\'t know how old is he (unknown)`,
+            widget2.render({user: {name: "Andrey"}})
+        );
+    });
+
 });

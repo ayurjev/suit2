@@ -8,15 +8,15 @@ export class Widget {
     render(data) {
         this.data = data;
         var result = this.cb.call(this);
-        result = result.replace(/\s\s+/ig, " ");
+        result = result.replace(/\s\s+/mig, " ");
         return result;
     }
 
     exp(source) {
 
-        if (/\((.+?)\)/ig.test(source)) {
-            source = source.replace(/\((.+?)\)/ig, (m,s) => {
-                return this.exp(s);
+        if (/\((.+?)\)/mig.test(source)) {
+            source = source.replace(/\((.+?)\)/mig, (m,s) => {
+                return "("+this.exp(s)+")";
             })
         }
 
@@ -26,22 +26,22 @@ export class Widget {
     var(source) {
         if (source === undefined) return "";
 
-        if (/(.+?)\?(.+?)\: (.+?)/ig.test(source)) return this.ternary(source);
-        if (/(.+?)\?(.+?)/ig.test(source)) return this.ternary(source);
+        if (/(.+?)\?(.+?)\: (.+?)/mig.test(source)) return this.ternary(source);
+        if (/(.+?)\?(.+?)/mig.test(source)) return this.ternary(source);
 
-        if (/(.+?)&&(.+?)/ig.test(source)) return this.cmp(source, "&&");
-        if (/(.+?)\|\|(.+?)/ig.test(source)) return this.cmp(source, "||");
-        if (/(.+?)==(.+?)/ig.test(source)) return this.cmp(source, "==");
-        if (/(.+?)==(.+?)/ig.test(source)) return this.cmp(source, "!=");
-        if (/(.+?)<(.+?)/ig.test(source)) return this.cmp(source, "<");
-        if (/(.+?)>(.+?)/ig.test(source)) return this.cmp(source, ">");
-        if (/(.+?)<=(.+?)/ig.test(source)) return this.cmp(source, "<=");
-        if (/(.+?)>=(.+?)/ig.test(source)) return this.cmp(source, ">=");
+        if (/(.+?)&&(.+?)/mig.test(source)) return this.cmp(source, "&&");
+        if (/(.+?)\|\|(.+?)/mig.test(source)) return this.cmp(source, "||");
+        if (/(.+?)==(.+?)/mig.test(source)) return this.cmp(source, "==");
+        if (/(.+?)==(.+?)/mig.test(source)) return this.cmp(source, "!=");
+        if (/(.+?)<(.+?)/mig.test(source)) return this.cmp(source, "<");
+        if (/(.+?)>(.+?)/mig.test(source)) return this.cmp(source, ">");
+        if (/(.+?)<=(.+?)/mig.test(source)) return this.cmp(source, "<=");
+        if (/(.+?)>=(.+?)/mig.test(source)) return this.cmp(source, ">=");
 
         source = source.trim();
 
         if (source.indexOf("$") > -1) {
-            source = source.replace(/\$([A-Za-z0-9_.]+)/ig, (m,s) => { return this.extract(s); });
+            source = source.replace(/\$([A-Za-z0-9_.]+)/mig, (m,s) => { return this.extract(s); });
         }
 
         try {
@@ -73,6 +73,13 @@ export class Widget {
 
     cmp(var_name, sep) {
         let [v1, v2] = var_name.split(sep);
+        if (sep == "||") {
+            try {
+                return eval(this.exp(v1) + sep + this.exp(v2));
+            } catch (ReferenceError) {
+                return eval(this.exp(v1) + sep + '`' + this.exp(v2) + '`');
+            }
+        }
         return eval(this.exp(v1) + sep + this.exp(v2));
     }
 
@@ -88,7 +95,10 @@ export class Compiler {
     constructor() {}
 
     compile(template) {
-        template = template.replace(/{(.+?)}/ig, (m, s) => { return '"+this.exp("'+s+'")+"'; });
+        template = template.replace(/{((.|\n)+?)}/mig, (m, s) => {
+            return '"+this.exp("'+s+'")+"';
+        });
+        template = template.replace(/\s\s+/mig, " ").trim();
         return new Widget((data) => { return eval('() => { return "' + template + '"}').call(); });
     }
 
