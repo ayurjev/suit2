@@ -75,4 +75,16 @@ describe('Compiler', () => {
         );
     });
 
+    it('should support ternary operator with variables in true/false expressions', () => {
+        let widget = c.compile('His name is <b>{$user.name}</b> and he is {$user.age == $target ? $target years old : not $target years old}');
+        assert.equal(
+            'His name is <b>Andrey</b> and he is not 42 years old',
+            widget.render({user: {name: "Andrey", age: 14}, target: 42})
+        );
+        assert.equal(
+            'His name is <b>Andrey</b> and he is 42 years old',
+            widget.render({user: {name: "Andrey", age: 42}, target: 42})
+        );
+    });
+
 });

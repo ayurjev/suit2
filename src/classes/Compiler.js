@@ -24,8 +24,10 @@ export class Widget {
     }
 
     var(source) {
-        if (/(.+?)\?(.+?)\: (.+?)/ig.test(source)) return this.ternary_full(source);
-        if (/(.+?)\?(.+?)/ig.test(source)) return this.ternary_short(source);
+        if (source === undefined) return "";
+
+        if (/(.+?)\?(.+?)\: (.+?)/ig.test(source)) return this.ternary(source);
+        if (/(.+?)\?(.+?)/ig.test(source)) return this.ternary(source);
 
         if (/(.+?)&&(.+?)/ig.test(source)) return this.cmp(source, "&&");
         if (/(.+?)\|\|(.+?)/ig.test(source)) return this.cmp(source, "||");
@@ -37,14 +39,10 @@ export class Widget {
         if (/(.+?)>=(.+?)/ig.test(source)) return this.cmp(source, ">=");
 
         source = source.trim();
-        if (source.indexOf("$") == 0) return this.extract(source.replace("$", ""));
 
-        // TODO: inplement simple string interpolation:
-        // else if (source.indexOf("$") > -1) {
-        //     source = source.replace(/\$(.+?)\s*/ig, (m,s) => {
-        //         return this.extract(s);
-        //     });
-        // }
+        if (source.indexOf("$") > -1) {
+            source = source.replace(/\$([A-Za-z0-9_.]+)/ig, (m,s) => { return this.extract(s); });
+        }
 
         try {
             return eval(source);
@@ -78,15 +76,10 @@ export class Widget {
         return eval(this.exp(v1) + sep + this.exp(v2));
     }
 
-    ternary_full(var_name) {
+    ternary(var_name) {
         var_name = var_name.replace(":", "?");
         let [path, positive, negative] = var_name.split("?");
-        return this.var(path) ? this.var(positive) : negative.trim();
-    }
-
-    ternary_short(var_name) {
-        let [path, positive] = var_name.split("?");
-        return this.var(path) ? this.var(positive) : "";
+        return this.var(path) ? this.var(positive) : this.var(negative);
     }
 }
 
@@ -98,7 +91,5 @@ export class Compiler {
         template = template.replace(/{(.+?)}/ig, (m, s) => { return '"+this.exp("'+s+'")+"'; });
         return new Widget((data) => { return eval('() => { return "' + template + '"}').call(); });
     }
-
-
 
 }
