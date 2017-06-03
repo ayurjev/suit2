@@ -87,7 +87,7 @@ describe('Compiler', () => {
         );
     });
 
-    it('should short full and short syntax for if/else (multiline)', () => {
+    it('should support full and short syntax for if/else (multiline)', () => {
         let widget1 = c.compile(`
             His name is <b>{$user.name}</b>
             {$user.age != null ?
@@ -101,14 +101,33 @@ describe('Compiler', () => {
 
         let widget2 = c.compile(`
             His name is <b>{$user.name}</b>
-            {$user.age != null ?
-                and we know how old is he ($user.age)
+            {$user.age != null
+                ? and we know how old is he ($user.age)
                 : and we don't know how old is he ($user.age || unknown)
             }
         `);
         assert.equal(
             `His name is <b>Andrey</b> and we don\'t know how old is he (unknown)`,
             widget2.render({user: {name: "Andrey"}})
+        );
+    });
+
+    it('should support iterations over lists', () => {
+        let widget = c.compile(`
+            There were 3 students in the class:<br />
+            {for $student in $students
+                $i) $student.name - $student.age<br />
+            }
+        `);
+        assert.equal(
+            'There were 3 students in the class:<br /> 1) Andrey - 28<br />2) Alex - 19<br />3) Ivan - 42<br />',
+            widget.render({
+                students: [
+                    {name: "Andrey", age: 28},
+                    {name: "Alex", age: 19},
+                    {name: "Ivan", age: 42}
+                ]
+            })
         );
     });
 

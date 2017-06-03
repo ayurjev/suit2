@@ -12,18 +12,18 @@ export class Widget {
         return result;
     }
 
-    exp(source) {
+    exp(source, additional_scope) {
 
         if (/\((.+?)\)/mig.test(source)) {
             source = source.replace(/\((.+?)\)/mig, (m,s) => {
-                return "("+this.exp(s)+")";
+                return "("+this.exp(s, additional_scope)+")";
             })
         }
 
-        return this.var(source);
+        return this.var(source, additional_scope);
     }
 
-    var(source) {
+    var(source, additional_scope) {
         if (source === undefined) return "";
 
         if (/(.+?)\?(.+?)\: (.+?)/mig.test(source)) return this.ternary(source);
@@ -33,15 +33,17 @@ export class Widget {
         if (/(.+?)\|\|(.+?)/mig.test(source)) return this.cmp(source, "||");
         if (/(.+?)==(.+?)/mig.test(source)) return this.cmp(source, "==");
         if (/(.+?)==(.+?)/mig.test(source)) return this.cmp(source, "!=");
-        if (/(.+?)<(.+?)/mig.test(source)) return this.cmp(source, "<");
-        if (/(.+?)>(.+?)/mig.test(source)) return this.cmp(source, ">");
+        if (/(.+?) < (.+?)/mig.test(source)) return this.cmp(source, "<");
+        if (/(.+?) > (.+?)/mig.test(source)) return this.cmp(source, ">");
         if (/(.+?)<=(.+?)/mig.test(source)) return this.cmp(source, "<=");
         if (/(.+?)>=(.+?)/mig.test(source)) return this.cmp(source, ">=");
+
+        if (/for (.+?) in (.+?)\s(.+?)/.test(source)) return this.list(source);
 
         source = source.trim();
 
         if (source.indexOf("$") > -1) {
-            source = source.replace(/\$([A-Za-z0-9_.]+)/mig, (m,s) => { return this.extract(s); });
+            source = source.replace(/\$([A-Za-z0-9_.]+)/mig, (m,s) => { return this.extract(m, additional_scope); });
         }
 
         try {
@@ -51,14 +53,18 @@ export class Widget {
         }
     }
 
-    extract(path) {
-        path = path.trim().split(".");
+    extract(path, additional_scope) {
+        path = path.replace("$$", "").replace("$", "").trim().split(".");
         var data = this.data;
         var value = null;
         var path_part = path.shift();
-
         while (path_part) {
-            if (path_part in data) {
+            if (additional_scope && path_part in additional_scope) {
+                value = additional_scope[path_part];
+                additional_scope = additional_scope[path_part];
+                path_part = path.shift();
+            }
+            else if (path_part in data) {
                 value = data[path_part];
                 data = data[path_part];
                 path_part = path.shift();
@@ -87,6 +93,20 @@ export class Widget {
         var_name = var_name.replace(":", "?");
         let [path, positive, negative] = var_name.split("?");
         return this.var(path) ? this.var(positive) : this.var(negative);
+    }
+
+    list(expression) {
+        let [,iterkey,iterable,template] = expression.match(/for (.+?) in (.+?)\s(.+?)$/);
+        template = template.replace(/\s\s+/mig, " ").trim();
+        iterkey = "$"+iterkey;
+        var out = "";
+        var that = this;
+        this.extract(iterable).forEach(function(itervalue, num) {
+            var local_scope = {"i": num + 1};
+            local_scope[iterkey.replace("$$", "").replace("$", "")] = itervalue;
+            out += that.exp(template, local_scope);
+        });
+        return out;
     }
 }
 
