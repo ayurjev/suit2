@@ -141,7 +141,7 @@ describe('Compiler', () => {
             }
         `);
         assert.equal(
-            'There were 3 students in the class:<br /> 1) Andrey - 28 - (@)<br />3) Ivan - 42 - (@)<br />',
+            'There were 3 students in the class:<br /> 1) Andrey - 28 - (@)<br />2) Ivan - 42 - (@)<br />',
             widget.render({
                 students: [
                     {name: "Andrey", age: 28},

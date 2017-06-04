@@ -12,43 +12,42 @@ export class Widget {
         return result;
     }
 
-    exp(source, additional_scope) {
+    exp(source, additional_scope, iternum) {
 
         if (/\((.+?)\)/mig.test(source)) {
             source = source.replace(/\((.+?)\)/mig, (m,s) => {
-                return "("+this.exp(s, additional_scope)+")";
+                return "("+this.exp(s, additional_scope, iternum)+")";
             })
         }
 
-        return this.var(source, additional_scope);
+        return this.var(source, additional_scope, iternum);
     }
 
-    var(source, additional_scope) {
+    var(source, additional_scope, iternum) {
         if (source === undefined) return "";
 
-        // source.replace(/{((.|\n)+)}/ig, (m, s) => {
-        //     console.dir("found: ", m);
-        //     return '"+this.exp("'+s+'")+"';
-        // });
+        if (/for (.+?) in (.+?)\s(.+?)/mig.test(source)) return this.list(source, additional_scope, iternum);
 
-        if (/for (.+?) in (.+?)\s(.+?)/mig.test(source)) return this.list(source, additional_scope);
+        if (/(.+?)\?(.+?)\: (.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
+        if (/(.+?)\?(.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
 
-        if (/(.+?)\?(.+?)\: (.+?)/mig.test(source)) return this.ternary(source, additional_scope);
-        if (/(.+?)\?(.+?)/mig.test(source)) return this.ternary(source, additional_scope);
-
-        if (/(.+?)&&(.+?)/mig.test(source)) return this.cmp(source, "&&", additional_scope);
-        if (/(.+?)\|\|(.+?)/mig.test(source)) return this.cmp(source, "||", additional_scope);
-        if (/(.+?)==(.+?)/mig.test(source)) return this.cmp(source, "==", additional_scope);
-        if (/(.+?)==(.+?)/mig.test(source)) return this.cmp(source, "!=", additional_scope);
-        if (/(.+?) < (.+?)/mig.test(source)) return this.cmp(source, "<", additional_scope);
-        if (/(.+?) > (.+?)/mig.test(source)) return this.cmp(source, ">", additional_scope);
-        if (/(.+?)<=(.+?)/mig.test(source)) return this.cmp(source, "<=", additional_scope);
-        if (/(.+?)>=(.+?)/mig.test(source)) return this.cmp(source, ">=", additional_scope);
+        if (/(.+?)&&(.+?)/mig.test(source)) return this.cmp(source, "&&", additional_scope, iternum);
+        if (/(.+?)\|\|(.+?)/mig.test(source)) return this.cmp(source, "||", additional_scope, iternum);
+        if (/(.+?)==(.+?)/mig.test(source)) return this.cmp(source, "==", additional_scope, iternum);
+        if (/(.+?)==(.+?)/mig.test(source)) return this.cmp(source, "!=", additional_scope, iternum);
+        if (/(.+?) < (.+?)/mig.test(source)) return this.cmp(source, "<", additional_scope, iternum);
+        if (/(.+?) > (.+?)/mig.test(source)) return this.cmp(source, ">", additional_scope, iternum);
+        if (/(.+?)<=(.+?)/mig.test(source)) return this.cmp(source, "<=", additional_scope, iternum);
+        if (/(.+?)>=(.+?)/mig.test(source)) return this.cmp(source, ">=", additional_scope, iternum);
 
         source = source.trim();
+        var that = this;
 
         if (source.indexOf("$") > -1) {
-            source = source.replace(/\$([A-Za-z0-9_.]+)/mig, (m,s) => { return this.extract(m, additional_scope); });
+            source = source.replace(
+                /\$([A-Za-z0-9_.]+)/mig,
+                function (m,s) { return that.extract(m, additional_scope, iternum); }
+            );
         }
 
         try {
@@ -58,7 +57,9 @@ export class Widget {
         }
     }
 
-    extract(path, additional_scope) {
+    extract(path, additional_scope, iternum) {
+        if (iternum && path == "$i") return iternum();
+
         path = path.replace("$$", "").replace("$", "").trim().split(".");
         var data = this.data;
         var value = null;
@@ -82,45 +83,46 @@ export class Widget {
         return value;
     }
 
-    cmp(var_name, sep, additional_scope) {
+    cmp(var_name, sep, additional_scope, iternum) {
         let [v1, v2] = var_name.split(sep);
         if (sep == "||") {
             try {
-                return eval(this.exp(v1, additional_scope) + sep + this.exp(v2, additional_scope));
+                return eval(this.exp(v1, additional_scope, iternum) + sep + this.exp(v2, additional_scope, iternum));
             } catch (ReferenceError) {
-                return eval(this.exp(v1, additional_scope) + sep + '`' + this.exp(v2, additional_scope) + '`');
+                return eval(this.exp(v1, additional_scope, iternum) + sep + '`' + this.exp(v2, additional_scope, iternum) + '`');
             }
         }
-        return eval(this.exp(v1, additional_scope) + sep + this.exp(v2, additional_scope));
+        return eval(this.exp(v1, additional_scope, iternum) + sep + this.exp(v2, additional_scope, iternum));
     }
 
-    ternary(var_name, additional_scope) {
+    ternary(var_name, additional_scope, iternum) {
         var_name = var_name.replace(":", "?");
         let [path, positive, negative] = var_name.split("?");
-        return this.var(path, additional_scope) ? this.var(positive, additional_scope) : this.var(negative, additional_scope);
+        return this.var(path, additional_scope, iternum) ? this.var(positive, additional_scope, iternum) : this.var(negative, additional_scope, iternum);
     }
 
-    list(expression, additional_scope) {
+    list(expression, additional_scope, iternum) {
 
         let [,iterkey,iterable,itertemplate] = expression.match(/for (.+?) in (.+?)\s(.+?)$/);
         itertemplate = itertemplate.replace(/\s\s+/mig, " ").trim();
+        iterkey = iterkey.replace("$", "");
 
-        iterkey = "$"+iterkey;
         var out = "";
         var that = this;
 
         if (itertemplate[0] != "{") itertemplate = "{" + itertemplate + "}";
 
         var itertemplate_compiled = itertemplate.replace(/{((.|\n)+)}/ig, (m, s) => {
-            return '(widget, scope) => { return widget.exp("'+s+'", scope); }';
+            return '(widget, scope, iternum) => { return widget.exp("'+s+'", scope, iternum); }';
         });
 
         itertemplate_compiled = eval(itertemplate_compiled);
 
+        var i = 0;
         this.extract(iterable).forEach(function(itervalue, num) {
-            var local_scope = Object.assign(additional_scope || {}, {"i": num + 1});;
-            local_scope[iterkey.replace("$$", "").replace("$", "")] = itervalue;
-            out += itertemplate_compiled(that, local_scope);
+            var local_scope = Object.assign(additional_scope || {});
+            local_scope[iterkey] = itervalue;
+            out += itertemplate_compiled(that, local_scope, function() { i++; return i; });
         });
 
         return out;
@@ -139,6 +141,7 @@ export class Compiler {
             while (start > -1) {
                 var stack = 1;
                 var p = start;
+
                 while (stack > 0) {
                     p++;
                     if (template[p] == "{") stack++;
