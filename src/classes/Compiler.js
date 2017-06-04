@@ -1,20 +1,24 @@
 
 export class Widget {
 
-    constructor(template, cb) {
-        this.template = template;
+    constructor(cb, compiler) {
+        this.compiler = compiler;
         this.cb = cb;
         this.cb_str = cb.toString();
     }
 
     render(data) {
         this.data = data;
-        var result = this.cb.call(this, this.template, this.data);
+        var result = this.cb();
         result = result.replace(/\s\s+/mig, " ");
         return result;
     }
 
     exp(source, additional_scope, iternum) {
+
+        if (source === undefined) return "";
+
+        source = source.trim();
 
         if (/\((.+?)\)/mig.test(source)) {
             source = source.replace(/\((.+?)\)/mig, (m,s) => {
@@ -22,13 +26,9 @@ export class Widget {
             })
         }
 
-        return this.var(source, additional_scope, iternum);
-    }
-
-    var(source, additional_scope, iternum) {
-        if (source === undefined) return "";
-
         if (/for (.+?) in (.+?)\s(.+?)/mig.test(source)) return this.list(source, additional_scope, iternum);
+
+        if (/include:(.+?)/mig.test(source)) return this.include(source, additional_scope, iternum);
 
         if (/(.+?)\?(.+?)\: (.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
         if (/(.+?)\?(.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
@@ -42,7 +42,10 @@ export class Widget {
         if (/(.+?)<=(.+?)/mig.test(source)) return this.cmp(source, "<=", additional_scope, iternum);
         if (/(.+?)>=(.+?)/mig.test(source)) return this.cmp(source, ">=", additional_scope, iternum);
 
-        source = source.trim();
+        return this.var(source, additional_scope, iternum);
+    }
+
+    var(source, additional_scope, iternum) {
         var that = this;
 
         if (source.indexOf("$") > -1) {
@@ -100,7 +103,7 @@ export class Widget {
     ternary(var_name, additional_scope, iternum) {
         var_name = var_name.replace(":", "?");
         let [path, positive, negative] = var_name.split("?");
-        return this.var(path, additional_scope, iternum) ? this.var(positive, additional_scope, iternum) : this.var(negative, additional_scope, iternum);
+        return this.exp(path, additional_scope, iternum) ? this.exp(positive, additional_scope, iternum) : this.exp(negative, additional_scope, iternum);
     }
 
     list(expression, additional_scope, iternum) {
@@ -129,11 +132,20 @@ export class Widget {
 
         return out;
     }
+
+    include(expression, additional_scope, iternum) {
+        expression = expression.replace("include:", "").trim();
+        var a = this.compiler.widgets[expression];
+        if (!a) { throw new Error("template not found: "+expression);}
+        return this.compiler.compile(a.default).render(this.data);
+    }
 }
 
 
 export class Compiler {
-    constructor() {}
+    constructor(cb) {
+        this.widgets = (cb || function() { return {}})();
+    }
 
     chunks(template) {
             var repl = {};
@@ -172,10 +184,7 @@ export class Compiler {
     compile(template) {
         template = template.replace(/\s\s+/mig, " ").trim();
         template = this.chunks(template);
-        return new Widget(
-            template,
-            (template) => { return eval('(template) => { return "' + template + '"}').call(template); }
-        );
+        return new Widget(() => { return eval('() => { return "' + template + '"}')(); }, this);
     }
 
 }

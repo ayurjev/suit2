@@ -2,6 +2,7 @@ var assert = require('assert');
 
 import {Compiler,Widget} from "../src/classes/Compiler";
 
+
 describe('Compiler', () => {
 
     let c = new Compiler();
@@ -153,16 +154,18 @@ describe('Compiler', () => {
         );
     });
 
-    // it('should support conditions and other syntax inside lists', () => {
-    //     let widget = c.compile(`
-    //         There were 3 students in the class:<br />
-    //         {for $student in $students
-    //             {$student.age > 20 ?
-    //                 $i) $student.name - $student.age - ($global_var)<br />
-    //             }
-    //         }
-    //     `);
-    //     console.dir(widget);
-    // });
+    it('should support include syntax somehow', () => {
+        let c = new Compiler(() => {
+            return {
+                "inclusion_name": require("../src/app/test_inclusion")
+            }
+        });
+        let widget = c.compile(`PREFIX-{include:inclusion_name}-SUFFIX`);
+        assert.equal(
+            'PREFIX-His name is <b>Andrey</b> and he is 28 years old-SUFFIX',
+            widget.render({user: {name: "Andrey", age: 28}})
+        );
+    })
+
 
 });

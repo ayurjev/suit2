@@ -1,0 +1,261 @@
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+"use strict";
+
+var _Compiler = require("../classes/Compiler");
+
+window.c = new _Compiler.Compiler(function () {
+    return {
+        "../app/test_inclusion": require("../app/test_inclusion")
+    };
+});
+
+},{"../app/test_inclusion":2,"../classes/Compiler":3}],2:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = "His name is <b>{$user.name}</b> and he is {$user.age} years old";
+
+},{}],3:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Widget = exports.Widget = function () {
+    function Widget(cb, compiler) {
+        _classCallCheck(this, Widget);
+
+        this.compiler = compiler;
+        this.cb = cb;
+        this.cb_str = cb.toString();
+    }
+
+    _createClass(Widget, [{
+        key: "render",
+        value: function render(data) {
+            this.data = data;
+            var result = this.cb();
+            result = result.replace(/\s\s+/mig, " ");
+            return result;
+        }
+    }, {
+        key: "exp",
+        value: function exp(source, additional_scope, iternum) {
+            var _this = this;
+
+            if (source === undefined) return "";
+
+            source = source.trim();
+
+            if (/\((.+?)\)/mig.test(source)) {
+                source = source.replace(/\((.+?)\)/mig, function (m, s) {
+                    return "(" + _this.exp(s, additional_scope, iternum) + ")";
+                });
+            }
+
+            if (/for (.+?) in (.+?)\s(.+?)/mig.test(source)) return this.list(source, additional_scope, iternum);
+
+            if (/include:(.+?)/mig.test(source)) return this.include(source, additional_scope, iternum);
+
+            if (/(.+?)\?(.+?)\: (.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
+            if (/(.+?)\?(.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
+
+            if (/(.+?)&&(.+?)/mig.test(source)) return this.cmp(source, "&&", additional_scope, iternum);
+            if (/(.+?)\|\|(.+?)/mig.test(source)) return this.cmp(source, "||", additional_scope, iternum);
+            if (/(.+?)==(.+?)/mig.test(source)) return this.cmp(source, "==", additional_scope, iternum);
+            if (/(.+?)==(.+?)/mig.test(source)) return this.cmp(source, "!=", additional_scope, iternum);
+            if (/(.+?) < (.+?)/mig.test(source)) return this.cmp(source, "<", additional_scope, iternum);
+            if (/(.+?) > (.+?)/mig.test(source)) return this.cmp(source, ">", additional_scope, iternum);
+            if (/(.+?)<=(.+?)/mig.test(source)) return this.cmp(source, "<=", additional_scope, iternum);
+            if (/(.+?)>=(.+?)/mig.test(source)) return this.cmp(source, ">=", additional_scope, iternum);
+
+            return this.var(source, additional_scope, iternum);
+        }
+    }, {
+        key: "var",
+        value: function _var(source, additional_scope, iternum) {
+            var that = this;
+
+            if (source.indexOf("$") > -1) {
+                source = source.replace(/\$([A-Za-z0-9_.]+)/mig, function (m, s) {
+                    return that.extract(m, additional_scope, iternum);
+                });
+            }
+
+            try {
+                return eval(source);
+            } catch (Exception) {
+                return source;
+            }
+        }
+    }, {
+        key: "extract",
+        value: function extract(path, additional_scope, iternum) {
+            if (iternum && path == "$i") return iternum();
+
+            path = path.replace("$$", "").replace("$", "").trim().split(".");
+            var data = this.data;
+            var value = null;
+            var path_part = path.shift();
+            while (path_part) {
+                if (additional_scope && path_part in additional_scope) {
+                    value = additional_scope[path_part];
+                    additional_scope = additional_scope[path_part];
+                    path_part = path.shift();
+                } else if (path_part in data) {
+                    value = data[path_part];
+                    data = data[path_part];
+                    path_part = path.shift();
+                } else {
+                    path_part = null;
+                    value = null;
+                }
+            }
+            return value;
+        }
+    }, {
+        key: "cmp",
+        value: function cmp(var_name, sep, additional_scope, iternum) {
+            var _var_name$split = var_name.split(sep),
+                _var_name$split2 = _slicedToArray(_var_name$split, 2),
+                v1 = _var_name$split2[0],
+                v2 = _var_name$split2[1];
+
+            if (sep == "||") {
+                try {
+                    return eval(this.exp(v1, additional_scope, iternum) + sep + this.exp(v2, additional_scope, iternum));
+                } catch (ReferenceError) {
+                    return eval(this.exp(v1, additional_scope, iternum) + sep + '`' + this.exp(v2, additional_scope, iternum) + '`');
+                }
+            }
+            return eval(this.exp(v1, additional_scope, iternum) + sep + this.exp(v2, additional_scope, iternum));
+        }
+    }, {
+        key: "ternary",
+        value: function ternary(var_name, additional_scope, iternum) {
+            var_name = var_name.replace(":", "?");
+
+            var _var_name$split3 = var_name.split("?"),
+                _var_name$split4 = _slicedToArray(_var_name$split3, 3),
+                path = _var_name$split4[0],
+                positive = _var_name$split4[1],
+                negative = _var_name$split4[2];
+
+            return this.exp(path, additional_scope, iternum) ? this.exp(positive, additional_scope, iternum) : this.exp(negative, additional_scope, iternum);
+        }
+    }, {
+        key: "list",
+        value: function list(expression, additional_scope, iternum) {
+            var _expression$match = expression.match(/for (.+?) in (.+?)\s(.+?)$/),
+                _expression$match2 = _slicedToArray(_expression$match, 4),
+                iterkey = _expression$match2[1],
+                iterable = _expression$match2[2],
+                itertemplate = _expression$match2[3];
+
+            itertemplate = itertemplate.replace(/\s\s+/mig, " ").trim();
+            iterkey = iterkey.replace("$", "");
+
+            var out = "";
+            var that = this;
+
+            if (itertemplate[0] != "{") itertemplate = "{" + itertemplate + "}";
+
+            var itertemplate_compiled = itertemplate.replace(/{((.|\n)+)}/ig, function (m, s) {
+                return '(widget, scope, iternum) => { return widget.exp("' + s + '", scope, iternum); }';
+            });
+
+            itertemplate_compiled = eval(itertemplate_compiled);
+
+            var i = 0;
+            this.extract(iterable).forEach(function (itervalue, num) {
+                var local_scope = Object.assign(additional_scope || {});
+                local_scope[iterkey] = itervalue;
+                out += itertemplate_compiled(that, local_scope, function () {
+                    i++;return i;
+                });
+            });
+
+            return out;
+        }
+    }, {
+        key: "include",
+        value: function include(expression, additional_scope, iternum) {
+            expression = expression.replace("include:", "").trim();
+            var a = this.compiler.widgets[expression];
+            if (!a) {
+                throw new Error("template not found: " + expression);
+            }
+            return this.compiler.compile(a.default).render(this.data);
+        }
+    }]);
+
+    return Widget;
+}();
+
+var Compiler = exports.Compiler = function () {
+    function Compiler(cb) {
+        _classCallCheck(this, Compiler);
+
+        this.widgets = (cb || function () {
+            return {};
+        })();
+    }
+
+    _createClass(Compiler, [{
+        key: "chunks",
+        value: function chunks(template) {
+            var repl = {};
+
+            var start = template.indexOf("{");
+
+            while (start > -1) {
+                var stack = 1;
+                var p = start;
+
+                while (stack > 0) {
+                    p++;
+                    if (template[p] == "{") stack++;
+                    if (template[p] == "}") stack--;
+                }
+
+                var to_compile = template.slice(start, p + 1);
+                var compiled = to_compile.replace(/{((.|\n)+)}/ig, function (m, s) {
+                    return '"+this.exp("' + s + '")+"';
+                });
+
+                var next_start = template.slice(p + 1, template.length).indexOf("{");
+                if (next_start > -1) start = p + next_start + 1;else start = -1;
+
+                repl[to_compile] = compiled;
+            }
+
+            for (to_compile in repl) {
+                template = template.replace(to_compile, repl[to_compile]);
+            }
+
+            return template;
+        }
+    }, {
+        key: "compile",
+        value: function compile(template) {
+            template = template.replace(/\s\s+/mig, " ").trim();
+            template = this.chunks(template);
+            return new Widget(function () {
+                return eval('() => { return "' + template + '"}')();
+            }, this);
+        }
+    }]);
+
+    return Compiler;
+}();
+
+},{}]},{},[1]);
