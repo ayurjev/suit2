@@ -1,13 +1,15 @@
 
 export class Widget {
 
-    constructor(cb) {
+    constructor(template, cb) {
+        this.template = template;
         this.cb = cb;
+        this.cb_str = cb.toString();
     }
 
     render(data) {
         this.data = data;
-        var result = this.cb.call(this);
+        var result = this.cb.call(this, this.template, this.data);
         result = result.replace(/\s\s+/mig, " ");
         return result;
     }
@@ -170,7 +172,10 @@ export class Compiler {
     compile(template) {
         template = template.replace(/\s\s+/mig, " ").trim();
         template = this.chunks(template);
-        return new Widget((data) => { return eval('() => { return "' + template + '"}').call(); });
+        return new Widget(
+            template,
+            (template) => { return eval('(template) => { return "' + template + '"}').call(template); }
+        );
     }
 
 }

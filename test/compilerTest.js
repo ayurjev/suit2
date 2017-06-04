@@ -153,4 +153,16 @@ describe('Compiler', () => {
         );
     });
 
+    // it('should support conditions and other syntax inside lists', () => {
+    //     let widget = c.compile(`
+    //         There were 3 students in the class:<br />
+    //         {for $student in $students
+    //             {$student.age > 20 ?
+    //                 $i) $student.name - $student.age - ($global_var)<br />
+    //             }
+    //         }
+    //     `);
+    //     console.dir(widget);
+    // });
+
 });
