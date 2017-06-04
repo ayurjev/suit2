@@ -131,4 +131,26 @@ describe('Compiler', () => {
         );
     });
 
+    it('should support conditions and other syntax inside lists', () => {
+        let widget = c.compile(`
+            There were 3 students in the class:<br />
+            {for $student in $students
+                {$student.age > 20 ?
+                    $i) $student.name - $student.age - ($global_var)<br />
+                }
+            }
+        `);
+        assert.equal(
+            'There were 3 students in the class:<br /> 1) Andrey - 28 - (@)<br />3) Ivan - 42 - (@)<br />',
+            widget.render({
+                students: [
+                    {name: "Andrey", age: 28},
+                    {name: "Alex", age: 19},
+                    {name: "Ivan", age: 42}
+                ],
+                global_var: "@"
+            })
+        );
+    });
+
 });
