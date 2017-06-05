@@ -154,7 +154,7 @@ describe('Compiler', () => {
         );
     });
 
-    it('should support include syntax somehow', () => {
+    it('should support include syntax', () => {
         let c = new Compiler(() => {
             return {
                 "inclusion_name": require("../src/app/test_inclusion")
@@ -165,7 +165,20 @@ describe('Compiler', () => {
             'PREFIX-His name is <b>Andrey</b> and he is 28 years old-SUFFIX',
             widget.render({user: {name: "Andrey", age: 28}})
         );
-    })
+    });
+
+    it('should support include syntax with variables', () => {
+        let c = new Compiler(() => {
+            return {
+                "digit": require("../src/app/digit")
+            }
+        });
+        let widget = c.compile(`PREFIX-{for $d in [1,2,3] {include:digit with {"digit": $d}}-}SUFFIX`);
+        assert.equal(
+            'PREFIX-1-2-3-SUFFIX',
+            widget.render()
+        );
+    });
 
 
 });
