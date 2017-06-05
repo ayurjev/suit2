@@ -1,8 +1,8 @@
 
 import {Compiler,Widget} from "../classes/Compiler";
 
-window.c = new Compiler(() => {
-    return {
-        "../app/test_inclusion": require("../app/test_inclusion")
-    }
-});
+window.widgets = {
+    "./widgets/Main": require("./widgets/Main")
+};
+
+window.config = {user: {name: "Andrey", age: 28}};

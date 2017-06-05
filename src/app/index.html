@@ -1,20 +1,11 @@
 <html>
 <head>
     <script src="bundle.js"></script>
-
-    <script
-      src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
-      integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g="
-      crossorigin="anonymous"></script>
-
 </head>
 
 <body>
-    <script>
-        $(function() {
-            var widget2 = c.compile('PREFIX-{include:../app/test_inclusion}-SUFFIX');
-            console.dir(widget2.render({user: {name: "Andrey", age: 28}}));
-        })
-    </script>
+    <widget style="display: none;">
+        {include:./widgets/Main}
+    </widget>
 </body>
 </html>

@@ -211,3 +211,21 @@ export class Compiler {
     }
 
 }
+
+try {
+    var domReady = function(callback) {
+        document.readyState === "interactive" || document.readyState === "complete" ? callback() : document.addEventListener("DOMContentLoaded", callback);
+    };
+
+    domReady(() => {
+        var compiler = new Compiler(() => {
+            return window.widgets;
+        });
+
+        var widgets = [].slice.call(document.getElementsByTagName("widget"));
+        widgets.forEach(function(widget) {
+            widget.innerHTML = compiler.compile(widget.innerHTML).render(window.config);
+            widget.style.display = 'block';
+        });
+    });
+} catch (Exception) {}

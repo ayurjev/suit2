@@ -3,13 +3,13 @@
 
 var _Compiler = require("../classes/Compiler");
 
-window.c = new _Compiler.Compiler(function () {
-    return {
-        "../app/test_inclusion": require("../app/test_inclusion")
-    };
-});
+window.widgets = {
+    "./widgets/Main": require("./widgets/Main")
+};
 
-},{"../app/test_inclusion":2,"../classes/Compiler":3}],2:[function(require,module,exports){
+window.config = { user: { name: "Andrey", age: 28 } };
+
+},{"../classes/Compiler":3,"./widgets/Main":2}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -63,7 +63,7 @@ var Widget = exports.Widget = function () {
             }
 
             if (/for (.+?) in (.+?)\s(.+?)/mig.test(source)) return this.list(source, additional_scope, iternum);
-
+            if (/include:(.+?) with\s(.+?)/mig.test(source)) return this.include_with(source, additional_scope, iternum);
             if (/include:(.+?)/mig.test(source)) return this.include(source, additional_scope, iternum);
 
             if (/(.+?)\?(.+?)\: (.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
@@ -164,19 +164,24 @@ var Widget = exports.Widget = function () {
             itertemplate = itertemplate.replace(/\s\s+/mig, " ").trim();
             iterkey = iterkey.replace("$", "");
 
+            if (iterable.indexOf("[") == 0 || iterable.indexOf("{") == 0) iterable = JSON.parse(iterable);else iterable = this.extract(iterable);
+
             var out = "";
             var that = this;
 
             if (itertemplate[0] != "{") itertemplate = "{" + itertemplate + "}";
 
-            var itertemplate_compiled = itertemplate.replace(/{((.|\n)+)}/ig, function (m, s) {
-                return '(widget, scope, iternum) => { return widget.exp("' + s + '", scope, iternum); }';
+            var itertemplate_compiled = this.compiler.chunks(itertemplate, function (to_compile) {
+                return to_compile.replace(/{((.|\n)+)}/ig, function (m, s) {
+                    return "` + ((widget, scope, iternum) => { return widget.exp(`" + s + "`, scope, iternum); })(widget, scope, iternum) + `";
+                });
             });
 
+            itertemplate_compiled = "((widget, scope, iternum) => { return `" + itertemplate_compiled + "`; })";
             itertemplate_compiled = eval(itertemplate_compiled);
 
             var i = 0;
-            this.extract(iterable).forEach(function (itervalue, num) {
+            iterable.forEach(function (itervalue, num) {
                 var local_scope = Object.assign(additional_scope || {});
                 local_scope[iterkey] = itervalue;
                 out += itertemplate_compiled(that, local_scope, function () {
@@ -190,11 +195,30 @@ var Widget = exports.Widget = function () {
         key: "include",
         value: function include(expression, additional_scope, iternum) {
             expression = expression.replace("include:", "").trim();
-            var a = this.compiler.widgets[expression];
-            if (!a) {
+            var t = this.compiler.widgets[expression];
+            if (!t) {
                 throw new Error("template not found: " + expression);
             }
-            return this.compiler.compile(a.default).render(this.data);
+            return this.compiler.compile(t.default).render(this.data);
+        }
+    }, {
+        key: "include_with",
+        value: function include_with(expression, additional_scope, iternum) {
+            var _expression$match3 = expression.match(/include:(.+?) with\s(.+?)$/),
+                _expression$match4 = _slicedToArray(_expression$match3, 3),
+                template = _expression$match4[1],
+                data = _expression$match4[2];
+
+            if (data.indexOf("[") == 0 || data.indexOf("{") == 0) {
+                data = this.var(data, additional_scope, iternum);
+                data = JSON.parse(data);
+            } else data = this.extract(data);
+
+            var t = this.compiler.widgets[template];
+            if (!t) {
+                throw new Error("template not found: " + template);
+            }
+            return this.compiler.compile(t.default).render(Object.assign({}, this.data, data));
         }
     }]);
 
@@ -212,7 +236,7 @@ var Compiler = exports.Compiler = function () {
 
     _createClass(Compiler, [{
         key: "chunks",
-        value: function chunks(template) {
+        value: function chunks(template, compile_cb) {
             var repl = {};
 
             var start = template.indexOf("{");
@@ -228,9 +252,7 @@ var Compiler = exports.Compiler = function () {
                 }
 
                 var to_compile = template.slice(start, p + 1);
-                var compiled = to_compile.replace(/{((.|\n)+)}/ig, function (m, s) {
-                    return '"+this.exp("' + s + '")+"';
-                });
+                var compiled = compile_cb(to_compile);
 
                 var next_start = template.slice(p + 1, template.length).indexOf("{");
                 if (next_start > -1) start = p + next_start + 1;else start = -1;
@@ -248,14 +270,36 @@ var Compiler = exports.Compiler = function () {
         key: "compile",
         value: function compile(template) {
             template = template.replace(/\s\s+/mig, " ").trim();
-            template = this.chunks(template);
+            template = this.chunks(template, function (to_compile) {
+                return to_compile.replace(/{((.|\n)+)}/ig, function (m, s) {
+                    return "`+this.exp(`" + s + "`)+`";
+                });
+            });
             return new Widget(function () {
-                return eval('() => { return "' + template + '"}')();
+                return eval('() => { return `' + template + '`}')();
             }, this);
         }
     }]);
 
     return Compiler;
 }();
+
+try {
+    var domReady = function domReady(callback) {
+        document.readyState === "interactive" || document.readyState === "complete" ? callback() : document.addEventListener("DOMContentLoaded", callback);
+    };
+
+    domReady(function () {
+        var compiler = new Compiler(function () {
+            return window.widgets;
+        });
+
+        var widgets = [].slice.call(document.getElementsByTagName("widget"));
+        widgets.forEach(function (widget) {
+            widget.innerHTML = compiler.compile(widget.innerHTML).render(window.config);
+            widget.style.display = 'block';
+        });
+    });
+} catch (Exception) {}
 
 },{}]},{},[1]);
