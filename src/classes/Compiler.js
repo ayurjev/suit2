@@ -140,11 +140,30 @@ export class Widget {
         return out;
     }
 
+    generateUID() {
+        var firstPart = (Math.random() * 46656) | 0;
+        var secondPart = (Math.random() * 46656) | 0;
+        firstPart = ("000" + firstPart.toString(36)).slice(-3);
+        secondPart = ("000" + secondPart.toString(36)).slice(-3);
+        return firstPart + secondPart;
+    }
+
     include(expression, additional_scope, iternum) {
         expression = expression.replace("include:", "").trim();
         var t = this.compiler.widgets[expression];
         if (!t) { throw new Error("template not found: "+expression);}
-        return this.compiler.compile(t.default).render(this.data);
+
+        var uid = this.generateUID();
+
+        var internal = {api: {createListeners: ()=>{}}};
+
+        t.init(internal);
+
+        window.instances[uid] = internal.api;
+
+        var template = '<widget id="' + uid + '" style="display: none;">'+t.template+'</widget>';
+
+        return this.compiler.compile(template).render(this.data);
     }
 
     include_with(expression, additional_scope, iternum) {
@@ -218,14 +237,23 @@ try {
     };
 
     domReady(() => {
+
+        window.instances = {};
+
         var compiler = new Compiler(() => {
             return window.widgets;
         });
 
+        document.body.innerHTML = compiler.compile(document.body.innerHTML).render(window.config);
+        document.body.style.display = 'block';
+
         var widgets = [].slice.call(document.getElementsByTagName("widget"));
         widgets.forEach(function(widget) {
-            widget.innerHTML = compiler.compile(widget.innerHTML).render(window.config);
+            var api = window.instances[widget.getAttribute("id")];
+            api.createListeners();
             widget.style.display = 'block';
         });
+
+
     });
 } catch (Exception) {}

@@ -13,9 +13,21 @@ window.config = { user: { name: "Andrey", age: 28 } };
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
-  value: true
+    value: true
 });
-exports.default = "His name is <b>{$user.name}</b> and he is {$user.age} years old";
+var template = exports.template = "\n    <div>\n        His name is <b>{$user.name}</b> and he is {$user.age} years old\n    </div>\n";
+
+var init = exports.init = function init(internal) {
+    internal.api.createListeners = function () {
+        internal.say();
+    };
+    internal.api.say = function () {
+        internal.say();
+    };
+    internal.say = function () {
+        alert("hello");
+    };
+};
 
 },{}],3:[function(require,module,exports){
 "use strict";
@@ -192,6 +204,15 @@ var Widget = exports.Widget = function () {
             return out;
         }
     }, {
+        key: "generateUID",
+        value: function generateUID() {
+            var firstPart = Math.random() * 46656 | 0;
+            var secondPart = Math.random() * 46656 | 0;
+            firstPart = ("000" + firstPart.toString(36)).slice(-3);
+            secondPart = ("000" + secondPart.toString(36)).slice(-3);
+            return firstPart + secondPart;
+        }
+    }, {
         key: "include",
         value: function include(expression, additional_scope, iternum) {
             expression = expression.replace("include:", "").trim();
@@ -199,7 +220,18 @@ var Widget = exports.Widget = function () {
             if (!t) {
                 throw new Error("template not found: " + expression);
             }
-            return this.compiler.compile(t.default).render(this.data);
+
+            var uid = this.generateUID();
+
+            var internal = { api: { createListeners: function createListeners() {} } };
+
+            t.init(internal);
+
+            window.instances[uid] = internal.api;
+
+            var template = '<widget id="' + uid + '" style="display: none;">' + t.template + '</widget>';
+
+            return this.compiler.compile(template).render(this.data);
         }
     }, {
         key: "include_with",
@@ -290,13 +322,20 @@ try {
     };
 
     domReady(function () {
+
+        window.instances = {};
+
         var compiler = new Compiler(function () {
             return window.widgets;
         });
 
+        document.body.innerHTML = compiler.compile(document.body.innerHTML).render(window.config);
+        document.body.style.display = 'block';
+
         var widgets = [].slice.call(document.getElementsByTagName("widget"));
         widgets.forEach(function (widget) {
-            widget.innerHTML = compiler.compile(widget.innerHTML).render(window.config);
+            var api = window.instances[widget.getAttribute("id")];
+            api.createListeners();
             widget.style.display = 'block';
         });
     });
