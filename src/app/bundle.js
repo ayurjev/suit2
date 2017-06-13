@@ -4,7 +4,7 @@
 var _Compiler = require("../classes/Compiler");
 
 window.router = {
-    "strategy": "hash",
+    "strategy": new _Compiler.HashStrategy(),
 
     "/": require("./widgets/Main"),
     "/page1/": require("./test_inclusion"),
@@ -345,6 +345,30 @@ var Compiler = exports.Compiler = function () {
     return Compiler;
 }();
 
+var HashStrategy = exports.HashStrategy = function () {
+    function HashStrategy() {
+        _classCallCheck(this, HashStrategy);
+    }
+
+    _createClass(HashStrategy, [{
+        key: "getCurrentLocation",
+        value: function getCurrentLocation() {
+            var url = location.hash || "/";
+            url = url.replace("#", "");
+            return url;
+        }
+    }, {
+        key: "onClick",
+        value: function onClick(event) {
+            var href = event.target.href;
+            if (location.protocol == "file:" && href.indexOf("file://") == 0) href = href.replace("file://", "");
+            location.hash = href;
+        }
+    }]);
+
+    return HashStrategy;
+}();
+
 try {
     var domReady = function domReady(callback) {
         document.readyState === "interactive" || document.readyState === "complete" ? callback() : document.addEventListener("DOMContentLoaded", callback);
@@ -354,23 +378,14 @@ try {
 
         window.instances = {};
 
-        var compiler = new Compiler();
+        var strategy = window.router.strategy || new HashStrategy();
 
         var load = function load(url) {
-
-            url = url || function () {
-                var url = location.hash || "/";
-                url = url.replace("#", "");
-                return url;
-            }();
-
+            url = url || strategy.getCurrentLocation();
             var loadTarget = window.router[url];
 
             if (loadTarget) {
-
-                var baseWidget = compiler.build(loadTarget);
-
-                document.body.innerHTML = baseWidget.render(window.config);
+                document.body.innerHTML = new Compiler().build(loadTarget).render(window.config);
 
                 var widgets = [].slice.call(document.getElementsByTagName("widget"));
                 widgets.forEach(function (widget) {
@@ -383,9 +398,7 @@ try {
 
         document.body.addEventListener("click", function (event) {
             if (event.target.tagName.toLowerCase() == "a") {
-                var href = event.target.href;
-                if (location.protocol == "file:" && href.indexOf("file://") == 0) href = href.replace("file://", "");
-                location.hash = href;
+                strategy.onClick(event);
                 event.preventDefault();
                 return false;
             }

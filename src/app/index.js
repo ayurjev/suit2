@@ -1,8 +1,8 @@
 
-import {Compiler,Widget} from "../classes/Compiler";
+import {Compiler,Widget,HashStrategy} from "../classes/Compiler";
 
 window.router = {
-    "strategy": "hash",
+    "strategy": new HashStrategy(),
 
     "/": require("./widgets/Main"),
     "/page1/": require("./test_inclusion"),
