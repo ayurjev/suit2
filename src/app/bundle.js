@@ -9,27 +9,42 @@ window.widgets = {
 
 window.config = { user: { name: "Andrey", age: 28 } };
 
-},{"../classes/Compiler":3,"./widgets/Main":2}],2:[function(require,module,exports){
+},{"../classes/Compiler":4,"./widgets/Main":3}],2:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+var template = exports.template = "His name is <b>{$user.name}</b> and he is {$user.age} years old";
+
+},{}],3:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-var template = exports.template = "\n    <div>\n        His name is <b>{$user.name}</b> and he is {$user.age} years old\n    </div>\n";
+var template = exports.template = "\n    <div>\n        His name is <b>{$user.name}</b> and he is {$user.age} years old<br />\n        {include:test_inclusion}\n    </div>\n";
 
 var init = exports.init = function init(internal) {
+
+    internal.includes = {
+        "test_inclusion": require("../test_inclusion")
+    };
+
     internal.api.createListeners = function () {
         internal.say();
     };
+
     internal.api.say = function () {
         internal.say();
     };
+
     internal.say = function () {
         alert("hello");
     };
 };
 
-},{}],3:[function(require,module,exports){
+},{"../test_inclusion":2}],4:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -43,11 +58,12 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Widget = exports.Widget = function () {
-    function Widget(cb, compiler) {
+    function Widget(cb, includes, compiler) {
         _classCallCheck(this, Widget);
 
         this.compiler = compiler;
         this.cb = cb;
+        this.includes = includes;
         this.cb_str = cb.toString();
     }
 
@@ -215,23 +231,26 @@ var Widget = exports.Widget = function () {
     }, {
         key: "include",
         value: function include(expression, additional_scope, iternum) {
+
             expression = expression.replace("include:", "").trim();
-            var t = this.compiler.widgets[expression];
+
+            var t = this.includes[expression] || this.compiler.widgets[expression];
+
             if (!t) {
-                throw new Error("template not found: " + expression);
+                require(expression);
             }
 
             var uid = this.generateUID();
 
-            var internal = { api: { createListeners: function createListeners() {} } };
+            var internal = { api: { createListeners: function createListeners() {} }, includes: {} };
 
-            t.init(internal);
+            if (t.init) t.init(internal);
 
             window.instances[uid] = internal.api;
 
             var template = '<widget id="' + uid + '" style="display: none;">' + t.template + '</widget>';
 
-            return this.compiler.compile(template).render(this.data);
+            return this.compiler.compile(template, internal.includes).render(this.data);
         }
     }, {
         key: "include_with",
@@ -246,11 +265,7 @@ var Widget = exports.Widget = function () {
                 data = JSON.parse(data);
             } else data = this.extract(data);
 
-            var t = this.compiler.widgets[template];
-            if (!t) {
-                throw new Error("template not found: " + template);
-            }
-            return this.compiler.compile(t.default).render(Object.assign({}, this.data, data));
+            return this.include(template, Object.assign({}, this.data, data), iternum);
         }
     }]);
 
@@ -300,7 +315,8 @@ var Compiler = exports.Compiler = function () {
         }
     }, {
         key: "compile",
-        value: function compile(template) {
+        value: function compile(template, includes) {
+            includes = includes || {};
             template = template.replace(/\s\s+/mig, " ").trim();
             template = this.chunks(template, function (to_compile) {
                 return to_compile.replace(/{((.|\n)+)}/ig, function (m, s) {
@@ -309,7 +325,7 @@ var Compiler = exports.Compiler = function () {
             });
             return new Widget(function () {
                 return eval('() => { return `' + template + '`}')();
-            }, this);
+            }, includes, this);
         }
     }]);
 

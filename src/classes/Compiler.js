@@ -1,9 +1,10 @@
 
 export class Widget {
 
-    constructor(cb, compiler) {
+    constructor(cb, includes, compiler) {
         this.compiler = compiler;
         this.cb = cb;
+        this.includes = includes;
         this.cb_str = cb.toString();
     }
 
@@ -149,21 +150,26 @@ export class Widget {
     }
 
     include(expression, additional_scope, iternum) {
+
         expression = expression.replace("include:", "").trim();
-        var t = this.compiler.widgets[expression];
-        if (!t) { throw new Error("template not found: "+expression);}
+
+        var t = this.includes[expression] || this.compiler.widgets[expression];
+
+        if (!t) {
+            require(expression);
+        }
 
         var uid = this.generateUID();
 
-        var internal = {api: {createListeners: ()=>{}}};
+        var internal = {api: {createListeners: ()=>{}}, includes: {}};
 
-        t.init(internal);
+        if (t.init) t.init(internal);
 
         window.instances[uid] = internal.api;
 
         var template = '<widget id="' + uid + '" style="display: none;">'+t.template+'</widget>';
 
-        return this.compiler.compile(template).render(this.data);
+        return this.compiler.compile(template, internal.includes).render(this.data);
     }
 
     include_with(expression, additional_scope, iternum) {
@@ -175,9 +181,7 @@ export class Widget {
         }
         else data = this.extract(data);
 
-        var t = this.compiler.widgets[template];
-        if (!t) { throw new Error("template not found: "+template);}
-        return this.compiler.compile(t.default).render(Object.assign({}, this.data, data));
+        return this.include(template, Object.assign({}, this.data, data), iternum);
     }
 }
 
@@ -219,14 +223,15 @@ export class Compiler {
             return template;
     }
 
-    compile(template) {
+    compile(template, includes) {
+        includes = includes || {};
         template = template.replace(/\s\s+/mig, " ").trim();
         template = this.chunks(template, (to_compile) => {
             return to_compile.replace(/{((.|\n)+)}/ig, (m, s) => {
                 return "`+this.exp(`"+s+"`)+`";
             });
         });
-        return new Widget(() => { return eval('() => { return `' + template + '`}')(); }, this);
+        return new Widget(() => { return eval('() => { return `' + template + '`}')(); }, includes, this);
     }
 
 }
