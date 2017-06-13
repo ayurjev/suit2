@@ -7,9 +7,16 @@ window.widgets = {
     "./widgets/Main": require("./widgets/Main")
 };
 
+window.router = {
+    "strategy": "hash",
+
+    "/": require("./widgets/Main"),
+    "/page1/": require("./test_inclusion")
+};
+
 window.config = { user: { name: "Andrey", age: 28 } };
 
-},{"../classes/Compiler":4,"./widgets/Main":3}],2:[function(require,module,exports){
+},{"../classes/Compiler":4,"./test_inclusion":2,"./widgets/Main":3}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -23,7 +30,7 @@ var template = exports.template = "His name is <b>{$user.name}</b> and he is {$u
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-var template = exports.template = "\n    <div>\n        His name is <b>{$user.name}</b> and he is {$user.age} years old<br />\n        {include:test_inclusion}\n    </div>\n";
+var template = exports.template = "\n    <div>\n        His <a href=\"/page1/\">name</a> is <b>{$user.name}</b> and he is {$user.age} <a href=\"/page1/subpage/\">years</a> old<br />\n        {include:test_inclusion}\n    </div>\n";
 
 var init = exports.init = function init(internal) {
 
@@ -32,7 +39,7 @@ var init = exports.init = function init(internal) {
     };
 
     internal.api.createListeners = function () {
-        internal.say();
+        //internal.say();
     };
 
     internal.api.say = function () {
@@ -220,15 +227,6 @@ var Widget = exports.Widget = function () {
             return out;
         }
     }, {
-        key: "generateUID",
-        value: function generateUID() {
-            var firstPart = Math.random() * 46656 | 0;
-            var secondPart = Math.random() * 46656 | 0;
-            firstPart = ("000" + firstPart.toString(36)).slice(-3);
-            secondPart = ("000" + secondPart.toString(36)).slice(-3);
-            return firstPart + secondPart;
-        }
-    }, {
         key: "include",
         value: function include(expression, additional_scope, iternum) {
 
@@ -240,17 +238,7 @@ var Widget = exports.Widget = function () {
                 require(expression);
             }
 
-            var uid = this.generateUID();
-
-            var internal = { api: { createListeners: function createListeners() {} }, includes: {} };
-
-            if (t.init) t.init(internal);
-
-            window.instances[uid] = internal.api;
-
-            var template = '<widget id="' + uid + '" style="display: none;">' + t.template + '</widget>';
-
-            return this.compiler.compile(template, internal.includes).render(this.data);
+            return this.compiler.build(t).render(this.data);
         }
     }, {
         key: "include_with",
@@ -314,6 +302,30 @@ var Compiler = exports.Compiler = function () {
             return template;
         }
     }, {
+        key: "generateUID",
+        value: function generateUID() {
+            var firstPart = Math.random() * 46656 | 0;
+            var secondPart = Math.random() * 46656 | 0;
+            firstPart = ("000" + firstPart.toString(36)).slice(-3);
+            secondPart = ("000" + secondPart.toString(36)).slice(-3);
+            return firstPart + secondPart;
+        }
+    }, {
+        key: "build",
+        value: function build(t) {
+            var uid = this.generateUID();
+
+            var internal = { api: { createListeners: function createListeners() {} }, includes: {} };
+
+            if (t.init) t.init(internal);
+
+            window.instances[uid] = internal.api;
+
+            var template = '<widget id="' + uid + '" style="display: none;">' + t.template + '</widget>';
+
+            return this.compile(template, internal.includes);
+        }
+    }, {
         key: "compile",
         value: function compile(template, includes) {
             includes = includes || {};
@@ -345,15 +357,46 @@ try {
             return window.widgets;
         });
 
-        document.body.innerHTML = compiler.compile(document.body.innerHTML).render(window.config);
-        document.body.style.display = 'block';
+        var load = function load(url) {
 
-        var widgets = [].slice.call(document.getElementsByTagName("widget"));
-        widgets.forEach(function (widget) {
-            var api = window.instances[widget.getAttribute("id")];
-            api.createListeners();
-            widget.style.display = 'block';
+            url = url || function () {
+                var url = location.hash || "/";
+                url = url.replace("#", "");
+                return url;
+            }();
+
+            var loadTarget = window.router[url];
+
+            if (loadTarget) {
+
+                var baseWidget = compiler.build(loadTarget);
+
+                document.body.innerHTML = baseWidget.render(window.config);
+
+                var widgets = [].slice.call(document.getElementsByTagName("widget"));
+                widgets.forEach(function (widget) {
+                    var api = window.instances[widget.getAttribute("id")];
+                    api.createListeners();
+                    widget.style.display = 'block';
+                });
+            }
+        };
+
+        document.body.addEventListener("click", function (event) {
+            if (event.target.tagName.toLowerCase() == "a") {
+                var href = event.target.href;
+                if (location.protocol == "file:" && href.indexOf("file://") == 0) href = href.replace("file://", "");
+                location.hash = href;
+                event.preventDefault();
+                return false;
+            }
         });
+
+        window.addEventListener('popstate', function (e) {
+            load();
+        }, false);
+
+        load();
     });
 } catch (Exception) {}
 

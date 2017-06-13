@@ -1,6 +1,6 @@
 export let template = `
     <div>
-        His name is <b>{$user.name}</b> and he is {$user.age} years old<br />
+        His <a href="/page1/">name</a> is <b>{$user.name}</b> and he is {$user.age} <a href="/page1/subpage/">years</a> old<br />
         {include:test_inclusion}
     </div>
 `;
@@ -13,7 +13,7 @@ export let init = function(internal) {
     };
 
     internal.api.createListeners = function() {
-        internal.say();
+        //internal.say();
     };
 
     internal.api.say = () => { internal.say(); }
