@@ -1,15 +1,12 @@
 
 import {Compiler,Widget} from "../classes/Compiler";
 
-window.widgets = {
-    "./widgets/Main": require("./widgets/Main"),
-};
-
 window.router = {
     "strategy": "hash",
-    
+
     "/": require("./widgets/Main"),
-    "/page1/": require("./test_inclusion")
+    "/page1/": require("./test_inclusion"),
+    "/page1/subpage/": require("./subpage")
 };
 
 window.config = {user: {name: "Andrey", age: 28}};

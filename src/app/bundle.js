@@ -3,20 +3,25 @@
 
 var _Compiler = require("../classes/Compiler");
 
-window.widgets = {
-    "./widgets/Main": require("./widgets/Main")
-};
-
 window.router = {
     "strategy": "hash",
 
     "/": require("./widgets/Main"),
-    "/page1/": require("./test_inclusion")
+    "/page1/": require("./test_inclusion"),
+    "/page1/subpage/": require("./subpage")
 };
 
 window.config = { user: { name: "Andrey", age: 28 } };
 
-},{"../classes/Compiler":4,"./test_inclusion":2,"./widgets/Main":3}],2:[function(require,module,exports){
+},{"../classes/Compiler":5,"./subpage":2,"./test_inclusion":3,"./widgets/Main":4}],2:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+var template = exports.template = "subpage content";
+
+},{}],3:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -24,7 +29,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 var template = exports.template = "His name is <b>{$user.name}</b> and he is {$user.age} years old";
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -51,7 +56,7 @@ var init = exports.init = function init(internal) {
     };
 };
 
-},{"../test_inclusion":2}],4:[function(require,module,exports){
+},{"../test_inclusion":3}],5:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -232,7 +237,7 @@ var Widget = exports.Widget = function () {
 
             expression = expression.replace("include:", "").trim();
 
-            var t = this.includes[expression] || this.compiler.widgets[expression];
+            var t = this.includes[expression];
 
             if (!t) {
                 require(expression);
@@ -261,12 +266,8 @@ var Widget = exports.Widget = function () {
 }();
 
 var Compiler = exports.Compiler = function () {
-    function Compiler(cb) {
+    function Compiler() {
         _classCallCheck(this, Compiler);
-
-        this.widgets = (cb || function () {
-            return {};
-        })();
     }
 
     _createClass(Compiler, [{
@@ -353,9 +354,7 @@ try {
 
         window.instances = {};
 
-        var compiler = new Compiler(function () {
-            return window.widgets;
-        });
+        var compiler = new Compiler();
 
         var load = function load(url) {
 

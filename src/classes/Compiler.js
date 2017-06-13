@@ -145,7 +145,7 @@ export class Widget {
 
         expression = expression.replace("include:", "").trim();
 
-        var t = this.includes[expression] || this.compiler.widgets[expression];
+        var t = this.includes[expression];
 
         if (!t) {
             require(expression);
@@ -169,9 +169,7 @@ export class Widget {
 
 
 export class Compiler {
-    constructor(cb) {
-        this.widgets = (cb || function() { return {}})();
-    }
+    constructor() {}
 
     chunks(template, compile_cb) {
             var repl = {};
@@ -249,9 +247,7 @@ try {
 
         window.instances = {};
 
-        var compiler = new Compiler(() => {
-            return window.widgets;
-        });
+        var compiler = new Compiler();
 
         var load = function(url) {
 
