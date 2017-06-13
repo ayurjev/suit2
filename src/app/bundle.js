@@ -305,11 +305,10 @@ var Compiler = exports.Compiler = function () {
     }, {
         key: "generateUID",
         value: function generateUID() {
-            var firstPart = Math.random() * 46656 | 0;
-            var secondPart = Math.random() * 46656 | 0;
-            firstPart = ("000" + firstPart.toString(36)).slice(-3);
-            secondPart = ("000" + secondPart.toString(36)).slice(-3);
-            return firstPart + secondPart;
+            var p = function p() {
+                return ("000" + (Math.random() * 46656 | 0).toString(36)).slice(-3);
+            };
+            return p() + p();
         }
     }, {
         key: "build",
@@ -376,17 +375,24 @@ try {
 
     domReady(function () {
 
+        // init/clear instances storage:
         window.instances = {};
 
+        // get routing strategy:
         var strategy = window.router.strategy || new HashStrategy();
 
         var load = function load(url) {
+
+            // get loadTarget:
             url = url || strategy.getCurrentLocation();
             var loadTarget = window.router[url];
 
             if (loadTarget) {
+
+                // compile baseWidget:
                 document.body.innerHTML = new Compiler().build(loadTarget).render(window.config);
 
+                // initialize all <widget>'s:
                 var widgets = [].slice.call(document.getElementsByTagName("widget"));
                 widgets.forEach(function (widget) {
                     var api = window.instances[widget.getAttribute("id")];
