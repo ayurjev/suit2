@@ -1,1 +1,1 @@
-export default `{$digit}`;
+export let template = `{$digit}`;

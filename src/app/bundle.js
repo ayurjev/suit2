@@ -146,6 +146,7 @@ var Widget = exports.Widget = function () {
             var data = this.data;
             var value = null;
             var path_part = path.shift();
+
             while (path_part) {
                 if (additional_scope && path_part in additional_scope) {
                     value = additional_scope[path_part];
@@ -243,7 +244,7 @@ var Widget = exports.Widget = function () {
                 require(expression);
             }
 
-            return this.compiler.build(t).render(this.data);
+            return this.compiler.build(t).render(Object.assign({}, this.data, additional_scope));
         }
     }, {
         key: "include_with",
@@ -314,14 +315,20 @@ var Compiler = exports.Compiler = function () {
         key: "build",
         value: function build(t) {
             var uid = this.generateUID();
-
             var internal = { api: { createListeners: function createListeners() {} }, includes: {} };
 
             if (t.init) t.init(internal);
 
-            window.instances[uid] = internal.api;
+            var template;
 
-            var template = '<widget id="' + uid + '" style="display: none;">' + t.template + '</widget>';
+            try {
+                window.instances[uid] = internal.api;
+                template = '<widget id="' + uid + '" style="display: none;">' + t.template + '</widget>';
+            }
+            // no window object:
+            catch (Exception) {
+                template = t.template;
+            }
 
             return this.compile(template, internal.includes);
         }
