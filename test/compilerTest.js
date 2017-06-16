@@ -180,5 +180,30 @@ describe('Compiler', () => {
         );
     });
 
+    it('should support rebuild syntax', () => {
+        let c = new Compiler();
+
+        let baseWidget = c.compile(
+            `{include:base_template}`, {
+                "base_template": require("../src/app/base_template")
+            }
+        );
+
+        assert.equal(
+            'PREFIX-DEFAULT-CONTENT-SUFFIX-ENDING',
+            baseWidget.render()
+        );
+
+        let rebasedWidget = c.compile(
+            `{rebuild:base_template with {"content": "REBASED-CONTENT", "blablatag": "222"}}`, {
+                "base_template": require("../src/app/base_template")
+            }
+        );
+        assert.equal(
+            'PREFIX-REBASED-CONTENT-SUFFIX-ENDING',
+            rebasedWidget.render()
+        );
+    });
+
 
 });

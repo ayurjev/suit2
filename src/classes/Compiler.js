@@ -31,6 +31,8 @@ export class Widget {
         if (/include:(.+?) with\s(.+?)/mig.test(source)) return this.include_with(source, additional_scope, iternum);
         if (/include:(.+?)/mig.test(source)) return this.include(source, additional_scope, iternum);
 
+        if (/rebuild:(.+?) with\s(.+?)/mig.test(source)) return this.rebuild(source, additional_scope, iternum);
+
         if (/(.+?)\?(.+?)\: (.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
         if (/(.+?)\?(.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
 
@@ -50,10 +52,18 @@ export class Widget {
         var that = this;
 
         if (source.indexOf("$") > -1) {
-            source = source.replace(
-                /\$([A-Za-z0-9_.]+)/mig,
-                function (m,s) { return that.extract(m, additional_scope, iternum); }
-            );
+
+            var default_value = null;
+            if (source.indexOf("$") == 0 && source.indexOf(":") > -1) [source, default_value] = source.split(":");
+
+            if (default_value) {
+                source = that.extract(source, additional_scope, iternum) || default_value;
+            } else {
+                source = source.replace(
+                    /\$([A-Za-z0-9_.]+)/mig,
+                    function (m,s) { return that.extract(m, additional_scope, iternum); }
+                );
+            }
         }
 
         try {
@@ -64,6 +74,7 @@ export class Widget {
     }
 
     extract(path, additional_scope, iternum) {
+
         if (iternum && path == "$i") return iternum();
 
         path = path.replace("$$", "").replace("$", "").trim().split(".");
@@ -157,6 +168,19 @@ export class Widget {
 
     include_with(expression, additional_scope, iternum) {
         let [,template,data] = expression.match(/include:(.+?) with\s(.+?)$/);
+
+        if (data.indexOf("[") == 0 || data.indexOf("{") == 0) {
+            data = this.var(data, additional_scope, iternum);
+            data = JSON.parse(data);
+        }
+        else data = this.extract(data);
+
+        return this.include(template, Object.assign({}, this.data, data), iternum);
+    }
+
+    rebuild(expression, additional_scope, iternum) {
+        console.dir(expression);
+        let [,template,data] = expression.match(/rebuild:(.+?) with\s(.+?)$/);
 
         if (data.indexOf("[") == 0 || data.indexOf("{") == 0) {
             data = this.var(data, additional_scope, iternum);
