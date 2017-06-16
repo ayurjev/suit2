@@ -1,15 +1,18 @@
 
 export class Widget {
 
-    constructor(cb, includes, compiler) {
+    constructor(cb, internal, compiler) {
         this.compiler = compiler;
         this.cb = cb;
-        this.includes = includes;
-        this.cb_str = cb.toString();
+        this.internal = internal;
+        this.internal.refresh = (forcedState) => {
+            var htmlTag = document.getElementById(this.internal.uid);
+            htmlTag.outerHTML = this.render(forcedState);
+        }
     }
 
-    render(data) {
-        this.data = data;
+    render(state) {
+        this.internal.state = state || this.internal.state;
         var result = this.cb();
         result = result.replace(/\s\s+/mig, " ");
         return result;
@@ -78,7 +81,7 @@ export class Widget {
         if (iternum && path == "$i") return iternum();
 
         path = path.replace("$$", "").replace("$", "").trim().split(".");
-        var data = this.data;
+        var data = this.internal.state;
         var value = null;
         var path_part = path.shift();
 
@@ -157,13 +160,13 @@ export class Widget {
 
         expression = expression.replace("include:", "").trim();
 
-        var t = this.includes[expression];
+        var t = this.internal.includes[expression];
 
         if (!t) {
             require(expression);
         }
 
-        return this.compiler.build(t).render(Object.assign({}, this.data, additional_scope));
+        return this.compiler.compile(t, Object.assign({}, this.internal.state, additional_scope)).render();
     }
 
     include_with(expression, additional_scope, iternum) {
@@ -175,11 +178,10 @@ export class Widget {
         }
         else data = this.extract(data);
 
-        return this.include(template, Object.assign({}, this.data, data), iternum);
+        return this.include(template, Object.assign({}, this.internal.state, data), iternum);
     }
 
     rebuild(expression, additional_scope, iternum) {
-        console.dir(expression);
         let [,template,data] = expression.match(/rebuild:(.+?) with\s(.+?)$/);
 
         if (data.indexOf("[") == 0 || data.indexOf("{") == 0) {
@@ -188,7 +190,7 @@ export class Widget {
         }
         else data = this.extract(data);
 
-        return this.include(template, Object.assign({}, this.data, data), iternum);
+        return this.include(template, Object.assign({}, this.internal.state, data), iternum);
     }
 }
 
@@ -233,9 +235,21 @@ export class Compiler {
         return p() + p();
     }
 
-    build(t) {
+    build_internal(uid, state, includes) {
+        return {
+            uid: uid,
+            api: {createListeners: ()=>{}},
+            state: state,
+            includes: includes
+        };
+    }
+
+    compile(t, state, includes) {
         var uid = this.generateUID();
-        var internal = {api: {createListeners: ()=>{}}, includes: {}};
+
+        state = state || {};
+        includes = includes || {};
+        var internal = this.build_internal(uid, state, includes);
 
         if (t.init) t.init(internal);
 
@@ -243,25 +257,21 @@ export class Compiler {
 
         try {
             window.instances[uid] = internal.api;
-            template = '<widget id="' + uid + '" style="display: none;">'+t.template+'</widget>';
+            template = '<widget id="' + uid + '">'+t.template+'</widget>';
         }
         // no window object:
         catch (Exception) {
             template = t.template;
         }
 
-        return this.compile(template, internal.includes);
-    }
-
-    compile(template, includes) {
-        includes = includes || {};
         template = template.replace(/\s\s+/mig, " ").trim();
         template = this.chunks(template, (to_compile) => {
             return to_compile.replace(/{((.|\n)+)}/ig, (m, s) => {
                 return "`+this.exp(`"+s+"`)+`";
             });
         });
-        return new Widget(() => { return eval('() => { return `' + template + '`}')(); }, includes, this);
+
+        return new Widget(() => { return eval('() => { return `' + template + '`}')(); }, internal, this);
     }
 
 }
@@ -301,14 +311,13 @@ try {
             if (loadTarget) {
 
                 // compile baseWidget:
-                document.body.innerHTML = (new Compiler()).build(loadTarget).render(window.config);
+                document.body.innerHTML = (new Compiler()).compile(loadTarget, window.config).render();
 
                 // initialize all <widget>'s:
                 var widgets = [].slice.call(document.getElementsByTagName("widget"));
                 widgets.forEach(function(widget) {
                     var api = window.instances[widget.getAttribute("id")];
                     api.createListeners();
-                    widget.style.display = 'block';
                 });
             }
         }

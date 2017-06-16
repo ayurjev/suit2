@@ -18,5 +18,11 @@ export let init = function(internal) {
 
     internal.api.say = () => { internal.say(); }
 
+    internal.api.change = () => {
+        internal.state.user.name = "Alexey";
+        internal.state.user.age = 42;
+        internal.refresh();
+    }
+
     internal.say = () => { alert("hello"); }
 };

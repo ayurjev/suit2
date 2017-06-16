@@ -8,169 +8,259 @@ describe('Compiler', () => {
     let c = new Compiler();
 
     it('should compile template into class Widget', () => {
-        let widget = c.compile('anything');
+        let widget = c.compile({template: 'anything'});
         assert(widget instanceof Widget);
     });
 
     it('should render widget correctly according to the data', () => {
-        let widget = c.compile('His name is <b>{$user.name}</b> and he is {$user.age} years old');
+        let widget = c.compile(
+            {template: 'His name is <b>{$user.name}</b> and he is {$user.age} years old'},
+            {user: {name: "Andrey", age: 28}}
+        );
         assert.equal(
             'His name is <b>Andrey</b> and he is 28 years old',
-            widget.render({user: {name: "Andrey", age: 28}})
+            widget.render()
         );
     });
 
     it('should use default value for variable if there is required variable is not present in data', () => {
-        let widget = c.compile('His name is <b>{$user.name}</b> and he is {$user.age || 18} years old');
+        let widget = c.compile(
+            {template: 'His name is <b>{$user.name}</b> and he is {$user.age || 18} years old'},
+            {user: {name: "Andrey"}}
+        );
         assert.equal(
             'His name is <b>Andrey</b> and he is 18 years old',
-            widget.render({user: {name: "Andrey"}})
+            widget.render()
         );
     });
 
     it('should support ternary operator for variables', () => {
-        let widget = c.compile('His name is <b>{$user.name}</b> and he is {$user.age < 18 ? young : old}');
+        let widget1 = c.compile(
+            {template: 'His name is <b>{$user.name}</b> and he is {$user.age < 18 ? young : old}'},
+            {user: {name: "Andrey", age: 14}}
+        );
         assert.equal(
             'His name is <b>Andrey</b> and he is young',
-            widget.render({user: {name: "Andrey", age: 14}})
+            widget1.render()
+        );
+
+        let widget2 = c.compile(
+            {template: 'His name is <b>{$user.name}</b> and he is {$user.age < 18 ? young : old}'},
+            {user: {name: "Andrey", age: 28}}
         );
         assert.equal(
             'His name is <b>Andrey</b> and he is old',
-            widget.render({user: {name: "Andrey", age: 28}})
+            widget2.render()
         );
     });
 
     it('should support ternary operator for variables (short version)', () => {
-        let widget = c.compile('His name is <b>{$user.name}</b> {$user.age < 18 ? and he is young}');
+        let widget1 = c.compile(
+            {
+                template: 'His name is <b>{$user.name}</b> {$user.age < 18 ? and he is young}'
+            },
+            {user: {name: "Andrey", age: 14}}
+        );
         assert.equal(
             'His name is <b>Andrey</b> and he is young',
-            widget.render({user: {name: "Andrey", age: 14}})
+            widget1.render()
+        );
+
+        let widget2 = c.compile(
+            {
+                template: 'His name is <b>{$user.name}</b> {$user.age < 18 ? and he is young}'
+            },
+            {user: {name: "Andrey", age: 28}}
         );
         assert.equal(
             'His name is <b>Andrey</b> ',
-            widget.render({user: {name: "Andrey", age: 28}})
+            widget2.render()
         );
     });
 
     it('should support ternary operator with conjunctions', () => {
-        let widget = c.compile('His name is <b>{$user.name}</b> {($user.age < 18 && $user.age > 10) ? and he is teenager}');
+        let widget1 = c.compile(
+            {
+                template: 'His name is <b>{$user.name}</b> {($user.age < 18 && $user.age > 10) ? and he is teenager}'
+            },
+            {user: {name: "Andrey", age: 14}}
+        );
         assert.equal(
             'His name is <b>Andrey</b> and he is teenager',
-            widget.render({user: {name: "Andrey", age: 14}})
+            widget1.render()
+        );
+
+        let widget2 = c.compile(
+            {
+                template: 'His name is <b>{$user.name}</b> {($user.age < 18 && $user.age > 10) ? and he is teenager}'
+            },
+            {user: {name: "Andrey", age: 28}}
         );
         assert.equal(
             'His name is <b>Andrey</b> ',
-            widget.render({user: {name: "Andrey", age: 28}})
+            widget2.render()
         );
     });
 
     it('should support ternary operator with disjunctions', () => {
-        let widget = c.compile('His name is <b>{$user.name}</b> and he is {($user.age < $target || $user.age > $target) ? not} {$target} years old');
+        let widget1 = c.compile(
+            {
+                template: `
+                    His name is <b>{$user.name}</b> and he is {($user.age < $target || $user.age > $target) ? not} {$target} years old
+                `
+            },
+            {user: {name: "Andrey", age: 14}, target: 42}
+        );
         assert.equal(
             'His name is <b>Andrey</b> and he is not 42 years old',
-            widget.render({user: {name: "Andrey", age: 14}, target: 42})
+            widget1.render()
+        );
+
+        let widget2 = c.compile(
+            {
+                template: `
+                    His name is <b>{$user.name}</b> and he is {($user.age < $target || $user.age > $target) ? not} {$target} years old
+                `
+            },
+            {user: {name: "Andrey", age: 42}, target: 42}
         );
         assert.equal(
             'His name is <b>Andrey</b> and he is 42 years old',
-            widget.render({user: {name: "Andrey", age: 42}, target: 42})
+            widget2.render()
         );
     });
 
     it('should support ternary operator with variables in true/false expressions', () => {
-        let widget = c.compile('His name is <b>{$user.name}</b> and he is {$user.age == $target ? $target years old : not $target years old}');
+        let widget1 = c.compile(
+            {
+                template: `
+                    His name is <b>{$user.name}</b> and he is {$user.age == $target ? $target years old : not $target years old}
+                `
+            },
+            {user: {name: "Andrey", age: 14}, target: 42}
+        );
         assert.equal(
             'His name is <b>Andrey</b> and he is not 42 years old',
-            widget.render({user: {name: "Andrey", age: 14}, target: 42})
+            widget1.render()
+        );
+
+        let widget2 = c.compile(
+            {
+                template: `
+                    His name is <b>{$user.name}</b> and he is {$user.age == $target ? $target years old : not $target years old}
+                `
+            },
+            {user: {name: "Andrey", age: 42}, target: 42}
         );
         assert.equal(
             'His name is <b>Andrey</b> and he is 42 years old',
-            widget.render({user: {name: "Andrey", age: 42}, target: 42})
+            widget2.render()
         );
     });
 
     it('should support full and short syntax for if/else (multiline)', () => {
-        let widget1 = c.compile(`
-            His name is <b>{$user.name}</b>
-            {$user.age != null ?
-                and we know how old is he
-            }
-        `);
+        let widget1 = c.compile(
+            {
+                template: `
+                    His name is <b>{$user.name}</b>
+                    {$user.age != null ?
+                        and we know how old is he
+                    }
+                `
+            },
+            {user: {name: "Andrey", age: 14}}
+        );
         assert.equal(
             'His name is <b>Andrey</b> and we know how old is he',
-            widget1.render({user: {name: "Andrey", age: 14}})
+            widget1.render()
         );
 
-        let widget2 = c.compile(`
-            His name is <b>{$user.name}</b>
-            {$user.age != null
-                ? and we know how old is he ($user.age)
-                : and we don't know how old is he ($user.age || unknown)
-            }
-        `);
+        let widget2 = c.compile(
+            {
+                template: `
+                    His name is <b>{$user.name}</b>
+                    {$user.age != null
+                        ? and we know how old is he ($user.age)
+                        : and we don't know how old is he ($user.age || unknown)
+                    }
+                `
+            },
+            {user: {name: "Andrey"}}
+        );
         assert.equal(
             `His name is <b>Andrey</b> and we don\'t know how old is he (unknown)`,
-            widget2.render({user: {name: "Andrey"}})
+            widget2.render()
         );
     });
 
     it('should support iterations over lists', () => {
-        let widget = c.compile(`
-            There were 3 students in the class:<br />
-            {for $student in $students
-                $i) $student.name - $student.age<br />
-            }
-        `);
-        assert.equal(
-            'There were 3 students in the class:<br /> 1) Andrey - 28<br />2) Alex - 19<br />3) Ivan - 42<br />',
-            widget.render({
+        let widget = c.compile(
+            {
+                template: `
+                    There were 3 students in the class:<br />
+                    {for $student in $students
+                        $i) $student.name - $student.age<br />
+                    }
+                `
+            },
+            {
                 students: [
                     {name: "Andrey", age: 28},
                     {name: "Alex", age: 19},
                     {name: "Ivan", age: 42}
                 ]
-            })
+            }
+        );
+        assert.equal(
+            'There were 3 students in the class:<br /> 1) Andrey - 28<br />2) Alex - 19<br />3) Ivan - 42<br />',
+            widget.render()
         );
     });
 
     it('should support conditions and other syntax inside lists', () => {
-        let widget = c.compile(`
-            There were 3 students in the class:<br />
-            {for $student in $students
-                {$student.age > 20 ?
-                    $i) $student.name - $student.age - ($global_var)<br />
-                }
-            }
-        `);
-        assert.equal(
-            'There were 3 students in the class:<br /> 1) Andrey - 28 - (@)<br />2) Ivan - 42 - (@)<br />',
-            widget.render({
+        let widget = c.compile(
+            {
+                template: `
+                    There were 3 students in the class:<br />
+                    {for $student in $students
+                        {$student.age > 20 ?
+                            $i) $student.name - $student.age - ($global_var)<br />
+                        }
+                    }
+                `
+            },
+            {
                 students: [
                     {name: "Andrey", age: 28},
                     {name: "Alex", age: 19},
                     {name: "Ivan", age: 42}
                 ],
                 global_var: "@"
-            })
+            }
+        );
+        assert.equal(
+            'There were 3 students in the class:<br /> 1) Andrey - 28 - (@)<br />2) Ivan - 42 - (@)<br />',
+            widget.render()
         );
     });
 
     it('should support include syntax', () => {
         let c = new Compiler();
         let widget = c.compile(
-            `PREFIX-{include:inclusion_name}-SUFFIX`, {
+            {template: `PREFIX-{include:inclusion_name}-SUFFIX`}, {user: {name: "Andrey", age: 28}}, {
                 "inclusion_name": require("../src/app/test_inclusion")
             }
         );
         assert.equal(
             'PREFIX-His name is <b>Andrey</b> and he is 28 years old-SUFFIX',
-            widget.render({user: {name: "Andrey", age: 28}})
+            widget.render()
         );
     });
 
     it('should support include syntax with variables', () => {
         let c = new Compiler();
         let widget = c.compile(
-            `PREFIX-{for $d in [1,2,3] {include:digit with {"digit": $d}}-}SUFFIX`, {
+            {template: `PREFIX-{for $d in [1,2,3] {include:digit with {"digit": $d}}-}SUFFIX`}, {}, {
                 "digit": require("../src/app/digit")
             }
         );
@@ -184,7 +274,7 @@ describe('Compiler', () => {
         let c = new Compiler();
 
         let baseWidget = c.compile(
-            `{include:base_template}`, {
+            {template: `{include:base_template}`}, {}, {
                 "base_template": require("../src/app/base_template")
             }
         );
@@ -195,7 +285,7 @@ describe('Compiler', () => {
         );
 
         let rebasedWidget = c.compile(
-            `{rebuild:base_template with {"content": "REBASED-CONTENT", "blablatag": "222"}}`, {
+            {template: `{rebuild:base_template with {"content": "REBASED-CONTENT", "blablatag": "222"}}`}, {}, {
                 "base_template": require("../src/app/base_template")
             }
         );

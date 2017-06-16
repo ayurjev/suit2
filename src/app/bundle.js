@@ -51,6 +51,12 @@ var init = exports.init = function init(internal) {
         internal.say();
     };
 
+    internal.api.change = function () {
+        internal.state.user.name = "Alexey";
+        internal.state.user.age = 42;
+        internal.refresh();
+    };
+
     internal.say = function () {
         alert("hello");
     };
@@ -70,19 +76,24 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Widget = exports.Widget = function () {
-    function Widget(cb, includes, compiler) {
+    function Widget(cb, internal, compiler) {
+        var _this = this;
+
         _classCallCheck(this, Widget);
 
         this.compiler = compiler;
         this.cb = cb;
-        this.includes = includes;
-        this.cb_str = cb.toString();
+        this.internal = internal;
+        this.internal.refresh = function (forcedState) {
+            var htmlTag = document.getElementById(_this.internal.uid);
+            htmlTag.outerHTML = _this.render(forcedState);
+        };
     }
 
     _createClass(Widget, [{
         key: "render",
-        value: function render(data) {
-            this.data = data;
+        value: function render(state) {
+            this.internal.state = state || this.internal.state;
             var result = this.cb();
             result = result.replace(/\s\s+/mig, " ");
             return result;
@@ -90,7 +101,7 @@ var Widget = exports.Widget = function () {
     }, {
         key: "exp",
         value: function exp(source, additional_scope, iternum) {
-            var _this = this;
+            var _this2 = this;
 
             if (source === undefined) return "";
 
@@ -98,13 +109,15 @@ var Widget = exports.Widget = function () {
 
             if (/\((.+?)\)/mig.test(source)) {
                 source = source.replace(/\((.+?)\)/mig, function (m, s) {
-                    return "(" + _this.exp(s, additional_scope, iternum) + ")";
+                    return "(" + _this2.exp(s, additional_scope, iternum) + ")";
                 });
             }
 
             if (/for (.+?) in (.+?)\s(.+?)/mig.test(source)) return this.list(source, additional_scope, iternum);
             if (/include:(.+?) with\s(.+?)/mig.test(source)) return this.include_with(source, additional_scope, iternum);
             if (/include:(.+?)/mig.test(source)) return this.include(source, additional_scope, iternum);
+
+            if (/rebuild:(.+?) with\s(.+?)/mig.test(source)) return this.rebuild(source, additional_scope, iternum);
 
             if (/(.+?)\?(.+?)\: (.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
             if (/(.+?)\?(.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
@@ -126,9 +139,24 @@ var Widget = exports.Widget = function () {
             var that = this;
 
             if (source.indexOf("$") > -1) {
-                source = source.replace(/\$([A-Za-z0-9_.]+)/mig, function (m, s) {
-                    return that.extract(m, additional_scope, iternum);
-                });
+
+                var default_value = null;
+                if (source.indexOf("$") == 0 && source.indexOf(":") > -1) {
+                    ;
+
+                    var _source$split = source.split(":");
+
+                    var _source$split2 = _slicedToArray(_source$split, 2);
+
+                    source = _source$split2[0];
+                    default_value = _source$split2[1];
+                }if (default_value) {
+                    source = that.extract(source, additional_scope, iternum) || default_value;
+                } else {
+                    source = source.replace(/\$([A-Za-z0-9_.]+)/mig, function (m, s) {
+                        return that.extract(m, additional_scope, iternum);
+                    });
+                }
             }
 
             try {
@@ -140,10 +168,11 @@ var Widget = exports.Widget = function () {
     }, {
         key: "extract",
         value: function extract(path, additional_scope, iternum) {
+
             if (iternum && path == "$i") return iternum();
 
             path = path.replace("$$", "").replace("$", "").trim().split(".");
-            var data = this.data;
+            var data = this.internal.state;
             var value = null;
             var path_part = path.shift();
 
@@ -238,13 +267,13 @@ var Widget = exports.Widget = function () {
 
             expression = expression.replace("include:", "").trim();
 
-            var t = this.includes[expression];
+            var t = this.internal.includes[expression];
 
             if (!t) {
                 require(expression);
             }
 
-            return this.compiler.build(t).render(Object.assign({}, this.data, additional_scope));
+            return this.compiler.compile(t, Object.assign({}, this.internal.state, additional_scope)).render();
         }
     }, {
         key: "include_with",
@@ -259,7 +288,22 @@ var Widget = exports.Widget = function () {
                 data = JSON.parse(data);
             } else data = this.extract(data);
 
-            return this.include(template, Object.assign({}, this.data, data), iternum);
+            return this.include(template, Object.assign({}, this.internal.state, data), iternum);
+        }
+    }, {
+        key: "rebuild",
+        value: function rebuild(expression, additional_scope, iternum) {
+            var _expression$match5 = expression.match(/rebuild:(.+?) with\s(.+?)$/),
+                _expression$match6 = _slicedToArray(_expression$match5, 3),
+                template = _expression$match6[1],
+                data = _expression$match6[2];
+
+            if (data.indexOf("[") == 0 || data.indexOf("{") == 0) {
+                data = this.var(data, additional_scope, iternum);
+                data = JSON.parse(data);
+            } else data = this.extract(data);
+
+            return this.include(template, Object.assign({}, this.internal.state, data), iternum);
         }
     }]);
 
@@ -312,10 +356,23 @@ var Compiler = exports.Compiler = function () {
             return p() + p();
         }
     }, {
-        key: "build",
-        value: function build(t) {
+        key: "build_internal",
+        value: function build_internal(uid, state, includes) {
+            return {
+                uid: uid,
+                api: { createListeners: function createListeners() {} },
+                state: state,
+                includes: includes
+            };
+        }
+    }, {
+        key: "compile",
+        value: function compile(t, state, includes) {
             var uid = this.generateUID();
-            var internal = { api: { createListeners: function createListeners() {} }, includes: {} };
+
+            state = state || {};
+            includes = includes || {};
+            var internal = this.build_internal(uid, state, includes);
 
             if (t.init) t.init(internal);
 
@@ -323,28 +380,23 @@ var Compiler = exports.Compiler = function () {
 
             try {
                 window.instances[uid] = internal.api;
-                template = '<widget id="' + uid + '" style="display: none;">' + t.template + '</widget>';
+                template = '<widget id="' + uid + '">' + t.template + '</widget>';
             }
             // no window object:
             catch (Exception) {
                 template = t.template;
             }
 
-            return this.compile(template, internal.includes);
-        }
-    }, {
-        key: "compile",
-        value: function compile(template, includes) {
-            includes = includes || {};
             template = template.replace(/\s\s+/mig, " ").trim();
             template = this.chunks(template, function (to_compile) {
                 return to_compile.replace(/{((.|\n)+)}/ig, function (m, s) {
                     return "`+this.exp(`" + s + "`)+`";
                 });
             });
+
             return new Widget(function () {
                 return eval('() => { return `' + template + '`}')();
-            }, includes, this);
+            }, internal, this);
         }
     }]);
 
@@ -397,14 +449,13 @@ try {
             if (loadTarget) {
 
                 // compile baseWidget:
-                document.body.innerHTML = new Compiler().build(loadTarget).render(window.config);
+                document.body.innerHTML = new Compiler().compile(loadTarget, window.config).render();
 
                 // initialize all <widget>'s:
                 var widgets = [].slice.call(document.getElementsByTagName("widget"));
                 widgets.forEach(function (widget) {
                     var api = window.instances[widget.getAttribute("id")];
                     api.createListeners();
-                    widget.style.display = 'block';
                 });
             }
         };
