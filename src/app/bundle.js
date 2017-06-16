@@ -34,6 +34,12 @@ var init = exports.init = function init(internal) {
     internal.api.createListeners = function () {
         internal.broadcast("TEST_INCLUSION_INITED", { a: 42 });
     };
+
+    internal.api.change = function (name, age) {
+        internal.state.user.name = name;
+        internal.state.user.age = age;
+        internal.refresh();
+    };
 };
 
 },{}],4:[function(require,module,exports){
@@ -100,9 +106,38 @@ var Widget = exports.Widget = function () {
         this.compiler = compiler;
         this.cb = cb;
         this.internal = internal;
+        this.internal.api._render = this.render;
 
-        this.internal.refresh = function (forcedState) {
-            document.getElementById(_this.internal.uid).outerHTML = _this.render(forcedState);
+        this.internal.refresh = function () {
+            try {
+                /**
+                 *  find_parent polyfill
+                 */
+                (function (e) {
+                    e.find_parent = function (css) {
+                        var parent = this.parentElement;
+
+                        while (parent) {
+                            if (parent.matches(css)) return parent;else parent = parent.parentElement;
+                        }
+                        return null;
+                    };
+                })(Element.prototype);
+
+                var widget = document.getElementById(_this.internal.uid);
+
+                do {
+                    var max = widget;
+                    widget = widget.find_parent("widget");
+                    console.dir(widget);
+                } while (widget);
+
+                console.dir(max.getAttribute("id"));
+
+                max.outerHTML = window.instances[max.getAttribute("id")].render();
+            } catch (ReferenceError) {
+                // it's ok... no document object... tests...
+            }
         };
 
         this.internal.subscribe = function (eventName, cb, origin) {
@@ -442,9 +477,17 @@ var Compiler = exports.Compiler = function () {
                 });
             });
 
-            return new Widget(function () {
+            var widget = new Widget(function () {
                 return eval('() => { return `' + template + '`}')();
             }, internal, this);
+
+            try {
+                window.instances[uid] = widget;
+            }
+            // no window object:
+            catch (Exception) {}
+
+            return widget;
         }
     }]);
 
@@ -482,11 +525,15 @@ try {
 
     domReady(function () {
 
-        // init/clear instances storage:
-        window.instances = {};
+        window.clear = function () {
+            // init/clear instances storage:
+            window.instances = {};
 
-        // init/clear subscriptions:
-        window.subscriptions = {};
+            // init/clear subscriptions:
+            window.subscriptions = {};
+        };
+
+        window.clear();
 
         window.subscribe = function (eventName, cb, origin) {
             if (!window.subscriptions[eventName]) window.subscriptions[eventName] = [];
@@ -525,7 +572,7 @@ try {
                 // initialize all <widget>'s:
                 var widgets = [].slice.call(document.getElementsByTagName("widget"));
                 widgets.forEach(function (widget) {
-                    var api = window.instances[widget.getAttribute("id")];
+                    var api = window.instances[widget.getAttribute("id")].api();
                     api.createListeners();
                 });
             }
@@ -540,6 +587,7 @@ try {
         });
 
         window.addEventListener('popstate', function (e) {
+            window.clear();
             load();
         }, false);
 

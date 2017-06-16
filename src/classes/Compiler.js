@@ -5,9 +5,39 @@ export class Widget {
         this.compiler = compiler;
         this.cb = cb;
         this.internal = internal;
+        this.internal.api._render = this.render;
 
-        this.internal.refresh = (forcedState) => {
-            document.getElementById(this.internal.uid).outerHTML = this.render(forcedState);
+        this.internal.refresh = () => {
+            try {
+                /**
+                 *  find_parent polyfill
+                 */
+                (function(e){
+                    e.find_parent = function(css) {
+                        var parent = this.parentElement;
+
+                        while (parent) {
+                            if (parent.matches(css)) return parent;
+                            else parent = parent.parentElement;
+                        }
+                        return null;
+                    }
+                })(Element.prototype);
+
+                var widget = document.getElementById(this.internal.uid);
+
+                do {
+                    var max = widget;
+                    widget = widget.find_parent("widget");
+                    console.dir(widget);
+                } while (widget)
+
+                console.dir(max.getAttribute("id"));
+
+                max.outerHTML = window.instances[max.getAttribute("id")].render();
+            } catch (ReferenceError) {
+                // it's ok... no document object... tests...
+            }
         }
 
         this.internal.subscribe = (eventName, cb, origin) => {
@@ -301,7 +331,15 @@ export class Compiler {
             });
         });
 
-        return new Widget(() => { return eval('() => { return `' + template + '`}')(); }, internal, this);
+        var widget = new Widget(() => { return eval('() => { return `' + template + '`}')(); }, internal, this);
+
+        try {
+            window.instances[uid] = widget;
+        }
+        // no window object:
+        catch (Exception) {}
+
+        return widget;
     }
 
 }
@@ -326,11 +364,15 @@ try {
 
     domReady(() => {
 
-        // init/clear instances storage:
-        window.instances = {};
+        window.clear = () => {
+            // init/clear instances storage:
+            window.instances = {};
 
-        // init/clear subscriptions:
-        window.subscriptions = {};
+            // init/clear subscriptions:
+            window.subscriptions = {};
+        }
+
+        window.clear();
 
         window.subscribe = (eventName, cb, origin) => {
             if (!window.subscriptions[eventName]) window.subscriptions[eventName] = [];
@@ -370,7 +412,7 @@ try {
                 // initialize all <widget>'s:
                 var widgets = [].slice.call(document.getElementsByTagName("widget"));
                 widgets.forEach(function(widget) {
-                    var api = window.instances[widget.getAttribute("id")];
+                    var api = window.instances[widget.getAttribute("id")].api();
                     api.createListeners();
                 });
             }
@@ -385,6 +427,7 @@ try {
         });
 
         window.addEventListener('popstate', function(e){
+            window.clear();
           load();
         }, false);
 
