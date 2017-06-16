@@ -53,8 +53,14 @@ var init = exports.init = function init(internal) {
     internal.api.createListeners = function () {
         //internal.say();
         internal.subscribe("TEST_INCLUSION_INITED", function (e) {
-            console.dir(e);internal.say();
+            console.dir(e);internal.say("GLOBAL");
         });
+
+        internal.subscribe("TEST_INCLUSION_INITED", function (e) {
+            console.dir(e);internal.say("EXCLUSIVE");
+        }, internal.includes.test_inclusion);
+
+        internal.broadcast("TEST_INCLUSION_INITED", { "local": 55 });
     };
 
     internal.api.say = function () {
@@ -67,8 +73,8 @@ var init = exports.init = function init(internal) {
         internal.refresh();
     };
 
-    internal.say = function () {
-        alert("hello");
+    internal.say = function (msg) {
+        alert(msg);
     };
 };
 
@@ -109,6 +115,11 @@ var Widget = exports.Widget = function () {
     }
 
     _createClass(Widget, [{
+        key: "api",
+        value: function api() {
+            return this.internal.api;
+        }
+    }, {
         key: "render",
         value: function render(state) {
             this.internal.state = state || this.internal.state;
@@ -287,11 +298,23 @@ var Widget = exports.Widget = function () {
 
             var t = this.internal.includes[expression];
 
+            if (t instanceof Array) {
+                t = t[0];
+            }
+
             if (!t) {
                 require(expression);
             }
 
-            return this.compiler.compile(t, Object.assign({}, this.internal.state, additional_scope)).render();
+            var widget = this.compiler.compile(t, Object.assign({}, this.internal.state, additional_scope));
+
+            if (t instanceof Array) {
+                this.internal.includes[expression].push(widget.api());
+            } else {
+                this.internal.includes[expression] = [t, widget.api()];
+            }
+
+            return widget.render();
         }
     }, {
         key: "include_with",
@@ -375,7 +398,7 @@ var Compiler = exports.Compiler = function () {
         }
     }, {
         key: "build_internal",
-        value: function build_internal(_uid, state, includes) {
+        value: function build_internal(_uid, state, includes, t) {
             return {
                 uid: _uid,
                 api: { createListeners: function createListeners() {}, uid: function uid() {
@@ -392,7 +415,7 @@ var Compiler = exports.Compiler = function () {
 
             state = state || {};
             includes = includes || {};
-            var internal = this.build_internal(uid, state, includes);
+            var internal = this.build_internal(uid, state, includes, t);
 
             if (t.init) t.init(internal);
 
@@ -470,7 +493,12 @@ try {
                 window.subscriptions[eventName].forEach(function (data) {
                     var cb = data[0];
                     var required_origin = data[1];
-                    if (!required_origin || required_origin.uid() == origin.uid()) cb(message);
+                    console.dir(required_origin);
+                    if (!required_origin) cb(message, origin);else {
+                        required_origin.forEach(function (obj) {
+                            if (obj.uid && obj.uid() == origin.uid()) cb(message, obj);
+                        });
+                    }
                 });
             }
         };

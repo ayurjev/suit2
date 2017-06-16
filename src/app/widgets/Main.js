@@ -13,8 +13,12 @@ export let init = function(internal) {
     };
 
     internal.api.createListeners = function() {
-        //internal.say();
-        internal.subscribe("TEST_INCLUSION_INITED", (e) => { console.dir(e); internal.say(); });
+        
+        internal.subscribe("TEST_INCLUSION_INITED", (e) => { console.dir(e); internal.say("GLOBAL"); });
+
+        internal.subscribe("TEST_INCLUSION_INITED", (e) => { console.dir(e); internal.say("EXCLUSIVE"); }, internal.includes.test_inclusion);
+
+        internal.broadcast("TEST_INCLUSION_INITED", {"local": 55});
     };
 
     internal.api.say = () => { internal.say(); }
@@ -25,5 +29,5 @@ export let init = function(internal) {
         internal.refresh();
     }
 
-    internal.say = () => { alert("hello"); }
+    internal.say = (msg) => { alert(msg); }
 };

@@ -19,6 +19,10 @@ export class Widget {
         }
     }
 
+    api() {
+        return this.internal.api;
+    }
+
     render(state) {
         this.internal.state = state || this.internal.state;
         var result = this.cb();
@@ -170,11 +174,23 @@ export class Widget {
 
         var t = this.internal.includes[expression];
 
+        if (t instanceof Array) {
+            t = t[0];
+        }
+
         if (!t) {
             require(expression);
         }
 
-        return this.compiler.compile(t, Object.assign({}, this.internal.state, additional_scope)).render();
+        var widget = this.compiler.compile(t, Object.assign({}, this.internal.state, additional_scope));
+
+        if (t instanceof Array) {
+            this.internal.includes[expression].push(widget.api());
+        } else {
+            this.internal.includes[expression] = [t, widget.api()];
+        }
+
+        return widget.render();
     }
 
     include_with(expression, additional_scope, iternum) {
@@ -243,7 +259,7 @@ export class Compiler {
         return p() + p();
     }
 
-    build_internal(uid, state, includes) {
+    build_internal(uid, state, includes, t) {
         return {
             uid: uid,
             api: {createListeners: ()=>{}, uid: () => { return uid; }},
@@ -257,7 +273,7 @@ export class Compiler {
 
         state = state || {};
         includes = includes || {};
-        var internal = this.build_internal(uid, state, includes);
+        var internal = this.build_internal(uid, state, includes, t);
 
         if (t.init) t.init(internal);
 
@@ -320,7 +336,13 @@ try {
                 window.subscriptions[eventName].forEach((data) => {
                     let cb = data[0];
                     let required_origin = data[1];
-                    if (!required_origin || required_origin.uid() == origin.uid()) cb(message);
+
+                    if (!required_origin) cb(message, origin);
+                    else {
+                        required_origin.forEach((obj) => {
+                            if (obj.uid && obj.uid() == origin.uid()) cb(message, obj);
+                        });
+                    }
                 });
             }
         };
