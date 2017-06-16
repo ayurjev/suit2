@@ -29,12 +29,13 @@ export class Widget {
                 do {
                     var max = widget;
                     widget = widget.find_parent("widget");
-                    console.dir(widget);
                 } while (widget)
 
-                console.dir(max.getAttribute("id"));
-
+                // TODO: this causes a leak -
+                // new uids are being generated for all the widgets durong rendering,
+                // but old uids are still present in window.instances object, eventhough they are useless...
                 max.outerHTML = window.instances[max.getAttribute("id")].render();
+
             } catch (ReferenceError) {
                 // it's ok... no document object... tests...
             }
