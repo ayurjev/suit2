@@ -5,9 +5,17 @@ export class Widget {
         this.compiler = compiler;
         this.cb = cb;
         this.internal = internal;
+
         this.internal.refresh = (forcedState) => {
-            var htmlTag = document.getElementById(this.internal.uid);
-            htmlTag.outerHTML = this.render(forcedState);
+            document.getElementById(this.internal.uid).outerHTML = this.render(forcedState);
+        }
+
+        this.internal.subscribe = (eventName, cb, origin) => {
+            window.subscribe(eventName, cb, origin);
+        }
+
+        this.internal.broadcast = (eventName, message) => {
+            window.broadcast(eventName, message, this.internal.api);
         }
     }
 
@@ -238,7 +246,7 @@ export class Compiler {
     build_internal(uid, state, includes) {
         return {
             uid: uid,
-            api: {createListeners: ()=>{}},
+            api: {createListeners: ()=>{}, uid: () => { return uid; }},
             state: state,
             includes: includes
         };
@@ -298,6 +306,24 @@ try {
 
         // init/clear instances storage:
         window.instances = {};
+
+        // init/clear subscriptions:
+        window.subscriptions = {};
+
+        window.subscribe = (eventName, cb, origin) => {
+            if (!window.subscriptions[eventName]) window.subscriptions[eventName] = [];
+            window.subscriptions[eventName].push([cb, origin]);
+        };
+
+        window.broadcast = (eventName, message, origin) => {
+            if (window.subscriptions[eventName]) {
+                window.subscriptions[eventName].forEach((data) => {
+                    let cb = data[0];
+                    let required_origin = data[1];
+                    if (!required_origin || required_origin.uid() == origin.uid()) cb(message);
+                });
+            }
+        };
 
         // get routing strategy:
         var strategy = window.router.strategy || new HashStrategy();

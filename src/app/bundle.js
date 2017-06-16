@@ -25,9 +25,16 @@ var template = exports.template = "subpage content";
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
-  value: true
+    value: true
 });
 var template = exports.template = "His name is <b>{$user.name}</b> and he is {$user.age} years old";
+
+var init = exports.init = function init(internal) {
+
+    internal.api.createListeners = function () {
+        internal.broadcast("TEST_INCLUSION_INITED", { a: 42 });
+    };
+};
 
 },{}],4:[function(require,module,exports){
 "use strict";
@@ -45,6 +52,9 @@ var init = exports.init = function init(internal) {
 
     internal.api.createListeners = function () {
         //internal.say();
+        internal.subscribe("TEST_INCLUSION_INITED", function (e) {
+            console.dir(e);internal.say();
+        });
     };
 
     internal.api.say = function () {
@@ -84,9 +94,17 @@ var Widget = exports.Widget = function () {
         this.compiler = compiler;
         this.cb = cb;
         this.internal = internal;
+
         this.internal.refresh = function (forcedState) {
-            var htmlTag = document.getElementById(_this.internal.uid);
-            htmlTag.outerHTML = _this.render(forcedState);
+            document.getElementById(_this.internal.uid).outerHTML = _this.render(forcedState);
+        };
+
+        this.internal.subscribe = function (eventName, cb, origin) {
+            window.subscribe(eventName, cb, origin);
+        };
+
+        this.internal.broadcast = function (eventName, message) {
+            window.broadcast(eventName, message, _this.internal.api);
         };
     }
 
@@ -357,10 +375,12 @@ var Compiler = exports.Compiler = function () {
         }
     }, {
         key: "build_internal",
-        value: function build_internal(uid, state, includes) {
+        value: function build_internal(_uid, state, includes) {
             return {
-                uid: uid,
-                api: { createListeners: function createListeners() {} },
+                uid: _uid,
+                api: { createListeners: function createListeners() {}, uid: function uid() {
+                        return _uid;
+                    } },
                 state: state,
                 includes: includes
             };
@@ -436,6 +456,24 @@ try {
 
         // init/clear instances storage:
         window.instances = {};
+
+        // init/clear subscriptions:
+        window.subscriptions = {};
+
+        window.subscribe = function (eventName, cb, origin) {
+            if (!window.subscriptions[eventName]) window.subscriptions[eventName] = [];
+            window.subscriptions[eventName].push([cb, origin]);
+        };
+
+        window.broadcast = function (eventName, message, origin) {
+            if (window.subscriptions[eventName]) {
+                window.subscriptions[eventName].forEach(function (data) {
+                    var cb = data[0];
+                    var required_origin = data[1];
+                    if (!required_origin || required_origin.uid() == origin.uid()) cb(message);
+                });
+            }
+        };
 
         // get routing strategy:
         var strategy = window.router.strategy || new HashStrategy();

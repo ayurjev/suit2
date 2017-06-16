@@ -14,6 +14,7 @@ export let init = function(internal) {
 
     internal.api.createListeners = function() {
         //internal.say();
+        internal.subscribe("TEST_INCLUSION_INITED", (e) => { console.dir(e); internal.say(); });
     };
 
     internal.api.say = () => { internal.say(); }
