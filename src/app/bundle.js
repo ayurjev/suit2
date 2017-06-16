@@ -51,7 +51,7 @@ var init = exports.init = function init(internal) {
     };
 
     internal.api.createListeners = function () {
-        //internal.say();
+
         internal.subscribe("TEST_INCLUSION_INITED", function (e) {
             console.dir(e);internal.say("GLOBAL");
         });
@@ -298,8 +298,9 @@ var Widget = exports.Widget = function () {
 
             var t = this.internal.includes[expression];
 
-            if (t instanceof Array) {
-                t = t[0];
+            if (t.uid instanceof Function || t instanceof Array) {
+                if (!this.internal._includes) this.internal._includes = {};
+                t = this.internal._includes[expression];
             }
 
             if (!t) {
@@ -308,10 +309,14 @@ var Widget = exports.Widget = function () {
 
             var widget = this.compiler.compile(t, Object.assign({}, this.internal.state, additional_scope));
 
-            if (t instanceof Array) {
+            if (t.uid instanceof Function) {
+                this.internal.includes[expression] = [t, widget.api()];
+            } else if (t instanceof Array) {
                 this.internal.includes[expression].push(widget.api());
             } else {
-                this.internal.includes[expression] = [t, widget.api()];
+                if (!this.internal._includes) this.internal._includes = {};
+                this.internal._includes[expression] = t;
+                this.internal.includes[expression] = widget.api();
             }
 
             return widget.render();
@@ -493,9 +498,9 @@ try {
                 window.subscriptions[eventName].forEach(function (data) {
                     var cb = data[0];
                     var required_origin = data[1];
-                    console.dir(required_origin);
+
                     if (!required_origin) cb(message, origin);else {
-                        required_origin.forEach(function (obj) {
+                        (required_origin instanceof Array ? required_origin : [required_origin]).forEach(function (obj) {
                             if (obj.uid && obj.uid() == origin.uid()) cb(message, obj);
                         });
                     }

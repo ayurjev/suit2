@@ -174,8 +174,9 @@ export class Widget {
 
         var t = this.internal.includes[expression];
 
-        if (t instanceof Array) {
-            t = t[0];
+        if (t.uid instanceof Function || t instanceof Array) {
+            if (!this.internal._includes) this.internal._includes = {};
+            t = this.internal._includes[expression];
         }
 
         if (!t) {
@@ -184,10 +185,15 @@ export class Widget {
 
         var widget = this.compiler.compile(t, Object.assign({}, this.internal.state, additional_scope));
 
-        if (t instanceof Array) {
+        if (t.uid instanceof Function) {
+            this.internal.includes[expression] = [t, widget.api()];
+        }
+        else if (t instanceof Array) {
             this.internal.includes[expression].push(widget.api());
         } else {
-            this.internal.includes[expression] = [t, widget.api()];
+            if (!this.internal._includes) this.internal._includes = {};
+            this.internal._includes[expression] = t;
+            this.internal.includes[expression] = widget.api();
         }
 
         return widget.render();
@@ -339,7 +345,7 @@ try {
 
                     if (!required_origin) cb(message, origin);
                     else {
-                        required_origin.forEach((obj) => {
+                        (required_origin instanceof Array ? required_origin : [required_origin]).forEach((obj) => {
                             if (obj.uid && obj.uid() == origin.uid()) cb(message, obj);
                         });
                     }
