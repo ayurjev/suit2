@@ -1,1 +1,1 @@
-export let template = `PREFIX-{$content:DEFAULT-CONTENT}-SUFFIX-{$fixed:ENDING}`;
+export let template = `PREFIX-{$content || DEFAULT-CONTENT}-SUFFIX-{$fixed || ENDING}`;

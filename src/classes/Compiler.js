@@ -1,4 +1,65 @@
 
+class Filter {
+    constructor(value) {
+        this.value = value;
+    }
+
+    length() {
+        return this.value.length;
+    }
+
+    startswith(prefix) {
+        return this.value.indexOf(prefix) == 0;
+    }
+
+    endswith(suffix) {
+        return this.value.indexOf(suffix) == this.value.length - suffix.length;
+    }
+
+    format(format_str) {
+        var date_obj;
+        if (this.value instanceof Date) date_obj = this.value;
+        else date_obj = new Date(this.value);
+
+        if (Object.prototype.toString.call(date_obj) != "[object Date]" || isNaN(date_obj.getTime())) {
+            return date;
+        }
+        var pad = function (val) {
+            val = String(val);
+            return val.length == 1 ? "0" + val : val;
+        };
+        format_str = format_str.replace("%d", pad(date_obj.getDate()));
+        format_str = format_str.replace("%m", pad(date_obj.getMonth() + 1));
+        format_str = format_str.replace("%y", String(date_obj.getFullYear())[2] + String(date_obj.getFullYear())[3]);
+        format_str = format_str.replace("%Y", date_obj.getFullYear());
+        format_str = format_str.replace("%H", pad(date_obj.getHours()));
+        format_str = format_str.replace("%M", pad(date_obj.getMinutes()));
+        format_str = format_str.replace("%S", pad(date_obj.getSeconds()));
+        return format_str;
+    }
+
+    in(haystack) {
+        var needle = this.value;
+        if (typeof(haystack) == "string") {
+            try {
+                haystack = JSON.parse(haystack);
+            } catch (e) {}
+        }
+        if (needle == null || haystack == null) { return false }
+        if (typeof(haystack) == "string"){ return !!(haystack.indexOf(needle) > -1); }
+        else if (haystack instanceof Array) {
+            for (var i in haystack) { if (haystack[i] == needle)  { return true; } }
+            return false;
+        }
+        else if (haystack instanceof Object) { return (needle in haystack); } else { return false; }
+    };
+
+    contains(needle) {
+        return new Filter(needle).in(this.value);
+    };
+
+}
+
 export class Widget {
 
     constructor(cb, internal, compiler) {
@@ -57,20 +118,20 @@ export class Widget {
     render(state) {
         this.internal.state = state || this.internal.state;
         var result = this.cb();
-        result = result.replace(/\s\s+/mig, " ");
-        return result;
+        return result.replace(/\s\s+/mig, " ");
     }
 
     exp(source, additional_scope, iternum) {
-
         if (source === undefined) return "";
-
         source = source.trim();
 
         if (/\((.+?)\)/mig.test(source)) {
             source = source.replace(/\((.+?)\)/mig, (m,s) => {
-                return "("+this.exp(s, additional_scope, iternum)+")";
-            })
+                if (s.indexOf('"') == 0 || s.indexOf("'") == 0) {
+                    return "(" + s + ")";
+                }
+                return "(" + this.exp(s, additional_scope, iternum) + ")";
+            });
         }
 
         if (/for (.+?) in (.+?)\s(.+?)/mig.test(source)) return this.list(source, additional_scope, iternum);
@@ -91,6 +152,8 @@ export class Widget {
         if (/(.+?)<=(.+?)/mig.test(source)) return this.cmp(source, "<=", additional_scope, iternum);
         if (/(.+?)>=(.+?)/mig.test(source)) return this.cmp(source, ">=", additional_scope, iternum);
 
+        if (source.indexOf("[") == 0 || source.indexOf("{") == 0) return source;
+
         return this.var(source, additional_scope, iternum);
     }
 
@@ -98,28 +161,30 @@ export class Widget {
         var that = this;
 
         if (source.indexOf("$") > -1) {
-
-            var default_value = null;
-            if (source.indexOf("$") == 0 && source.indexOf(":") > -1) [source, default_value] = source.split(":");
-
-            if (default_value) {
-                source = that.extract(source, additional_scope, iternum) || default_value;
-            } else {
-                source = source.replace(
-                    /\$([A-Za-z0-9_.]+)/mig,
-                    function (m,s) { return that.extract(m, additional_scope, iternum); }
-                );
-            }
+            source = source.replace(
+                /\$([A-Za-z0-9_.]+(\|[A-Za-z0-9_.\(\)\"\'%$,\[\]]+)*)/mig,
+                function (m,s) {
+                    var extracted_value = that.extract(m, additional_scope, iternum);
+                    if (extracted_value instanceof Array) extracted_value = JSON.stringify(extracted_value);
+                    return extracted_value;
+                }
+            );
         }
 
+
+        var result = null;
         try {
-            return eval(source);
+            result = eval(source);
         } catch (Exception){
-            return source;
+            result = source;
         }
+
+        return result;
     }
 
     extract(path, additional_scope, iternum) {
+        var filter = null;
+        if (path.indexOf("$") == 0 && path.indexOf("|") > -1) [path, filter] = path.split("|");
 
         if (iternum && path == "$i") return iternum();
 
@@ -144,6 +209,18 @@ export class Widget {
                 value = null;
             }
         }
+
+        if (filter) {
+            var params;
+            if (filter.indexOf(")") != filter.length - 1) filter = filter + "()";
+            else {
+                [,,params] = filter.match(/(.+?)\((.+?)\)$/);
+                if (params.indexOf('"') != 0 && params.indexOf("'") != 0 && params.indexOf('[') != 0 && params.indexOf('{') != 0) {
+                    filter = filter.replace(params, '"' + params + '"');
+                }
+            }
+            value = eval("(new Filter(value))." + filter);
+        }
         return value;
     }
 
@@ -153,7 +230,15 @@ export class Widget {
             try {
                 return eval(this.exp(v1, additional_scope, iternum) + sep + this.exp(v2, additional_scope, iternum));
             } catch (ReferenceError) {
-                return eval(this.exp(v1, additional_scope, iternum) + sep + '`' + this.exp(v2, additional_scope, iternum) + '`');
+                try {
+                    return eval(this.exp(v1, additional_scope, iternum) + sep + '`' + this.exp(v2, additional_scope, iternum) + '`');
+                } catch (ReferenceError) {
+                    try {
+                        return eval('`' + this.exp(v1, additional_scope, iternum) + '`' + sep + this.exp(v2, additional_scope, iternum));
+                    } catch (ReferenceError) {
+                        return eval('`' + this.exp(v1, additional_scope, iternum) + '`' + sep + '`' + this.exp(v2, additional_scope, iternum) + '`');
+                    }
+                }
             }
         }
         return eval(this.exp(v1, additional_scope, iternum) + sep + this.exp(v2, additional_scope, iternum));
