@@ -27,7 +27,7 @@ export class Widget {
                 var widget = document.getElementById(this.internal.uid);
 
                 var target = widget;
-                if (this.compiler.config.refresh_up) {
+                if (this.compiler.config.refresh_up && this.compiler.config.state == "shared") {
                     do {
                         target = widget;
                         widget = widget.find_parent("widget");
@@ -313,6 +313,8 @@ export class Compiler {
     }
 
     generateUID2(t) {
+        // TODO: it is not good idea to use the whole temlate as a key...
+        // We should use a hash, but there is no md5 function in raw js
         if (this.uids_cache[t.template]) return this.uids_cache[t.template];
         else {
             var uid = this.generateUID();
