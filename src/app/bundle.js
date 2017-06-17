@@ -30,7 +30,7 @@ Object.defineProperty(exports, "__esModule", {
 var template = exports.template = "His name is <b>{$user.name}</b> and he is {$user.age} years old";
 
 var init = exports.init = function init(internal) {
-
+    internal.bugaga = "111";
     internal.api.createListeners = function () {
         internal.broadcast("TEST_INCLUSION_INITED", { a: 42 });
     };
@@ -38,7 +38,12 @@ var init = exports.init = function init(internal) {
     internal.api.change = function (name, age) {
         internal.state.user.name = name;
         internal.state.user.age = age;
+        internal.state.local_property = "xxx";
         internal.refresh();
+    };
+
+    internal.api.get_state = function () {
+        return internal.state;
     };
 };
 
@@ -91,6 +96,8 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -126,15 +133,15 @@ var Widget = exports.Widget = function () {
 
                 var widget = document.getElementById(_this.internal.uid);
 
-                do {
-                    var max = widget;
-                    widget = widget.find_parent("widget");
-                    console.dir(widget);
-                } while (widget);
+                var target = widget;
+                if (_this.compiler.config.refresh_up) {
+                    do {
+                        target = widget;
+                        widget = widget.find_parent("widget");
+                    } while (widget);
+                }
 
-                console.dir(max.getAttribute("id"));
-
-                max.outerHTML = window.instances[max.getAttribute("id")].render();
+                target.outerHTML = _this.compiler.instances[target.getAttribute("id")].render();
             } catch (ReferenceError) {
                 // it's ok... no document object... tests...
             }
@@ -334,7 +341,6 @@ var Widget = exports.Widget = function () {
             var t = this.internal.includes[expression];
 
             if (t.uid instanceof Function || t instanceof Array) {
-                if (!this.internal._includes) this.internal._includes = {};
                 t = this.internal._includes[expression];
             }
 
@@ -342,7 +348,7 @@ var Widget = exports.Widget = function () {
                 require(expression);
             }
 
-            var widget = this.compiler.compile(t, Object.assign({}, this.internal.state, additional_scope));
+            var widget = this.compiler.compile(t, Object.assign({}, this.compiler.deepclone(this.internal.state), additional_scope));
 
             if (t.uid instanceof Function) {
                 this.internal.includes[expression] = [t, widget.api()];
@@ -369,7 +375,7 @@ var Widget = exports.Widget = function () {
                 data = JSON.parse(data);
             } else data = this.extract(data);
 
-            return this.include(template, Object.assign({}, this.internal.state, data), iternum);
+            return this.include(template, Object.assign({}, this.compiler.deepclone(this.internal.state), data), iternum);
         }
     }, {
         key: "rebuild",
@@ -384,7 +390,7 @@ var Widget = exports.Widget = function () {
                 data = JSON.parse(data);
             } else data = this.extract(data);
 
-            return this.include(template, Object.assign({}, this.internal.state, data), iternum);
+            return this.include(template, Object.assign({}, this.compiler.deepclone(this.internal.state), data), iternum);
         }
     }]);
 
@@ -392,11 +398,31 @@ var Widget = exports.Widget = function () {
 }();
 
 var Compiler = exports.Compiler = function () {
-    function Compiler() {
+    function Compiler(config) {
         _classCallCheck(this, Compiler);
+
+        this.config = config || {};
+        this.instances = {};
+        this.uids_cache = {};
     }
 
     _createClass(Compiler, [{
+        key: "deepclone",
+        value: function deepclone(source) {
+
+            if (this.config.state == "shared") return source;
+
+            var destination = {};
+            for (var property in source) {
+                if (_typeof(source[property]) === "object" && source[property] !== null) {
+                    destination[property] = this.deepclone(source[property]);
+                } else {
+                    destination[property] = source[property];
+                }
+            }
+            return destination;
+        }
+    }, {
         key: "chunks",
         value: function chunks(template, compile_cb) {
             var repl = {};
@@ -437,6 +463,15 @@ var Compiler = exports.Compiler = function () {
             return p() + p();
         }
     }, {
+        key: "generateUID2",
+        value: function generateUID2(t) {
+            if (this.uids_cache[t.template]) return this.uids_cache[t.template];else {
+                var uid = this.generateUID();
+                this.uids_cache[t.template] = uid;
+                return uid;
+            }
+        }
+    }, {
         key: "build_internal",
         value: function build_internal(_uid, state, includes, t) {
             return {
@@ -451,19 +486,27 @@ var Compiler = exports.Compiler = function () {
     }, {
         key: "compile",
         value: function compile(t, state, includes) {
-            var uid = this.generateUID();
+            var uid = this.generateUID2(t);
+
+            var prev_state = {};
+            if (this.instances[uid]) {
+                prev_state = this.instances[uid].internal.state;
+            }
 
             state = state || {};
             includes = includes || {};
-            var internal = this.build_internal(uid, state, includes, t);
+            var internal = this.build_internal(uid, Object.assign(prev_state, state), includes, t);
 
             if (t.init) t.init(internal);
 
             var template;
 
             try {
-                window.instances[uid] = internal.api;
-                template = '<widget id="' + uid + '">' + t.template + '</widget>';
+                // if there is a window object:
+                if (window) {
+                    this.instances[uid] = internal.api;
+                    template = '<widget id="' + uid + '">' + t.template + '</widget>';
+                }
             }
             // no window object:
             catch (Exception) {
@@ -482,7 +525,7 @@ var Compiler = exports.Compiler = function () {
             }, internal, this);
 
             try {
-                window.instances[uid] = widget;
+                this.instances[uid] = widget;
             }
             // no window object:
             catch (Exception) {}
@@ -524,10 +567,10 @@ try {
     };
 
     domReady(function () {
-
+        window.compiler = new Compiler();
         window.clear = function () {
             // init/clear instances storage:
-            window.instances = {};
+            compiler.instances = {};
 
             // init/clear subscriptions:
             window.subscriptions = {};
@@ -567,12 +610,12 @@ try {
             if (loadTarget) {
 
                 // compile baseWidget:
-                document.body.innerHTML = new Compiler().compile(loadTarget, window.config).render();
+                document.body.innerHTML = window.compiler.compile(loadTarget, window.config).render();
 
                 // initialize all <widget>'s:
                 var widgets = [].slice.call(document.getElementsByTagName("widget"));
                 widgets.forEach(function (widget) {
-                    var api = window.instances[widget.getAttribute("id")].api();
+                    var api = window.compiler.instances[widget.getAttribute("id")].api();
                     api.createListeners();
                 });
             }

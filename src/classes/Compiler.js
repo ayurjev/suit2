@@ -26,15 +26,15 @@ export class Widget {
 
                 var widget = document.getElementById(this.internal.uid);
 
-                do {
-                    var max = widget;
-                    widget = widget.find_parent("widget");
-                } while (widget)
+                var target = widget;
+                if (this.compiler.config.refresh_up) {
+                    do {
+                        target = widget;
+                        widget = widget.find_parent("widget");
+                    } while (widget)
+                }
 
-                // TODO: this causes a leak -
-                // new uids are being generated for all the widgets durong rendering,
-                // but old uids are still present in window.instances object, eventhough they are useless...
-                max.outerHTML = window.instances[max.getAttribute("id")].render();
+                target.outerHTML = this.compiler.instances[target.getAttribute("id")].render();
 
             } catch (ReferenceError) {
                 // it's ok... no document object... tests...
@@ -206,15 +206,12 @@ export class Widget {
         var t = this.internal.includes[expression];
 
         if (t.uid instanceof Function || t instanceof Array) {
-            if (!this.internal._includes) this.internal._includes = {};
             t = this.internal._includes[expression];
         }
 
-        if (!t) {
-            require(expression);
-        }
+        if (!t) { require(expression); }
 
-        var widget = this.compiler.compile(t, Object.assign({}, this.internal.state, additional_scope));
+        var widget = this.compiler.compile(t, Object.assign({},  this.compiler.deepclone(this.internal.state), additional_scope));
 
         if (t.uid instanceof Function) {
             this.internal.includes[expression] = [t, widget.api()];
@@ -239,7 +236,7 @@ export class Widget {
         }
         else data = this.extract(data);
 
-        return this.include(template, Object.assign({}, this.internal.state, data), iternum);
+        return this.include(template, Object.assign({}, this.compiler.deepclone(this.internal.state), data), iternum);
     }
 
     rebuild(expression, additional_scope, iternum) {
@@ -251,13 +248,32 @@ export class Widget {
         }
         else data = this.extract(data);
 
-        return this.include(template, Object.assign({}, this.internal.state, data), iternum);
+        return this.include(template, Object.assign({}, this.compiler.deepclone(this.internal.state), data), iternum);
     }
 }
 
 
 export class Compiler {
-    constructor() {}
+    constructor(config) {
+        this.config = config || {};
+        this.instances = {};
+        this.uids_cache = {};
+    }
+
+    deepclone(source) {
+
+        if (this.config.state == "shared") return source;
+
+        var destination = {};
+        for (var property in source) {
+            if (typeof source[property] === "object" && source[property] !== null) {
+                destination[property] = this.deepclone(source[property]);
+            } else {
+                destination[property] = source[property];
+            }
+        }
+        return destination;
+    };
 
     chunks(template, compile_cb) {
             var repl = {};
@@ -296,6 +312,15 @@ export class Compiler {
         return p() + p();
     }
 
+    generateUID2(t) {
+        if (this.uids_cache[t.template]) return this.uids_cache[t.template];
+        else {
+            var uid = this.generateUID();
+            this.uids_cache[t.template] = uid;
+            return uid;
+        }
+    }
+
     build_internal(uid, state, includes, t) {
         return {
             uid: uid,
@@ -306,19 +331,27 @@ export class Compiler {
     }
 
     compile(t, state, includes) {
-        var uid = this.generateUID();
+        var uid = this.generateUID2(t);
+
+        var prev_state = {};
+        if (this.instances[uid]) {
+            prev_state = this.instances[uid].internal.state;
+        }
 
         state = state || {};
         includes = includes || {};
-        var internal = this.build_internal(uid, state, includes, t);
+        var internal = this.build_internal(uid, Object.assign(prev_state, state), includes, t);
 
         if (t.init) t.init(internal);
 
         var template;
 
         try {
-            window.instances[uid] = internal.api;
-            template = '<widget id="' + uid + '">'+t.template+'</widget>';
+            // if there is a window object:
+            if (window) {
+                this.instances[uid] = internal.api;
+                template = '<widget id="' + uid + '">'+t.template+'</widget>';
+            }
         }
         // no window object:
         catch (Exception) {
@@ -335,7 +368,7 @@ export class Compiler {
         var widget = new Widget(() => { return eval('() => { return `' + template + '`}')(); }, internal, this);
 
         try {
-            window.instances[uid] = widget;
+            this.instances[uid] = widget;
         }
         // no window object:
         catch (Exception) {}
@@ -364,10 +397,10 @@ try {
     };
 
     domReady(() => {
-
+        window.compiler = new Compiler();
         window.clear = () => {
             // init/clear instances storage:
-            window.instances = {};
+            compiler.instances = {};
 
             // init/clear subscriptions:
             window.subscriptions = {};
@@ -408,12 +441,12 @@ try {
             if (loadTarget) {
 
                 // compile baseWidget:
-                document.body.innerHTML = (new Compiler()).compile(loadTarget, window.config).render();
+                document.body.innerHTML = window.compiler.compile(loadTarget, window.config).render();
 
                 // initialize all <widget>'s:
                 var widgets = [].slice.call(document.getElementsByTagName("widget"));
                 widgets.forEach(function(widget) {
-                    var api = window.instances[widget.getAttribute("id")].api();
+                    var api = window.compiler.instances[widget.getAttribute("id")].api();
                     api.createListeners();
                 });
             }
