@@ -9,6 +9,17 @@ describe('Compiler', () => {
 
     it('should support "length" filter', () => {
         let widget = c.compile(
+            {template: `Length of his name equals {$user.name|length()}!`},
+            {user: {name: "Andrey"}}
+        );
+        assert.equal(
+            'Length of his name equals 6!',
+            widget.render()
+        );
+    });
+
+    it('should support "length" filter inside conditional blocks', () => {
+        let widget = c.compile(
             {
                 template: `
                     His name is <b>{$user.name}</b>
@@ -171,6 +182,40 @@ describe('Compiler', () => {
             'BRWYRWYR is not cool name',
             widget2.render()
         );
+    });
+
+    it('should support "pluralform" filter', () => {
+        let widget = c.compile(
+            {
+                template: `
+                    {for $age in $ages
+                        $age|pluralform(["год","года","лет"]),
+                    }
+                `
+            },
+            {ages: [1, 2, 3, 4, 5, 11, 42, 45]}
+        );
+
+        assert.equal(
+            '1 год,2 года,3 года,4 года,5 лет,11 лет,42 года,45 лет,',
+            widget.render()
+        );
+    });
+
+    it('should support "html" filter and escape characters by default', () => {
+        let widget1 = c.compile(
+            {template: `{$html}`},
+            {html: "<p>test</p>"}
+        );
+
+        assert.equal('&lt;p&gt;test&lt;&#x2F;p&gt;', widget1.render());
+
+        let widget = c.compile(
+            {template: `{$html|html()}`},
+            {html: "<p>test</p>"}
+        );
+
+        assert.equal('<p>test</p>', widget.render());
     });
 
 });

@@ -58,6 +58,34 @@ class Filter {
         return new Filter(needle).in(this.value);
     };
 
+    pluralword(words) {
+        var initial_num = this.value;
+        if (typeof(words) == "string") words = JSON.parse(words);
+        var num = parseInt(initial_num) % 100;
+        var word;
+        if (num > 19) { num = num % 10; }
+        if (num == 1) { word = words[0]; }
+        else if (num == 2 || num == 3 || num == 4) { word = words[1]; }
+        else { word = words[2]; }
+        return word;
+    };
+
+    pluralform(words) {
+        return this.value + " " + this.pluralword(words);
+    };
+
+    html() {
+        return decodeURI(
+            this.value
+            .replace(/&amp;/g, "&")
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&#x2F;/g, "/")
+        );
+    }
+
 }
 
 export class Widget {
@@ -162,7 +190,7 @@ export class Widget {
 
         if (source.indexOf("$") > -1) {
             source = source.replace(
-                /\$([A-Za-z0-9_.]+(\|[A-Za-z0-9_.\(\)\"\'%$,\[\]]+)*)/mig,
+                /\$[A-Za-zА-Яа-я0-9_.]+(\|+(.+?)[\)\s])*/mig,
                 function (m,s) {
                     var extracted_value = that.extract(m, additional_scope, iternum);
                     if (extracted_value instanceof Array) extracted_value = JSON.stringify(extracted_value);
@@ -210,12 +238,14 @@ export class Widget {
             }
         }
 
+        value = this.escape(value);
+
         if (filter) {
             var params;
             if (filter.indexOf(")") != filter.length - 1) filter = filter + "()";
             else {
-                [,,params] = filter.match(/(.+?)\((.+?)\)$/);
-                if (params.indexOf('"') != 0 && params.indexOf("'") != 0 && params.indexOf('[') != 0 && params.indexOf('{') != 0) {
+                [,,params] = filter.match(/(.+?)\((.*?)\)$/);
+                if (params.length && params.indexOf('"') != 0 && params.indexOf("'") != 0 && params.indexOf('[') != 0 && params.indexOf('{') != 0) {
                     filter = filter.replace(params, '"' + params + '"');
                 }
             }
@@ -223,6 +253,14 @@ export class Widget {
         }
         return value;
     }
+
+    escape(obj) {
+        if (typeof(obj) == "string") {
+            var entityMap = {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': '&quot;', "'": '&#39;', "/": '&#x2F;'};
+            return obj.replace(/[&<>"'\/]/g, function (s) { return entityMap[s]; });
+        }
+        return obj;
+    };
 
     cmp(var_name, sep, additional_scope, iternum) {
         let [v1, v2] = var_name.split(sep);
