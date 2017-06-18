@@ -8,14 +8,51 @@ describe('Compiler', () => {
     let c = new Compiler();
 
     it('should support "length" filter', () => {
-        let widget = c.compile(
-            {template: `Length of his name equals {$user.name|length()}!`},
-            {user: {name: "Andrey"}}
-        );
-        assert.equal(
-            'Length of his name equals 6!',
-            widget.render()
-        );
+
+        let widget = c.compile({template: `Length of his name equals {$user.name|length()}!`}, {user: {name: "Andrey"}});
+        assert.equal('Length of his name equals 6!', widget.render());
+
+        let widget1 = c.compile({template: `Length of his name equals {$user.name|length()}!`}, {user: {}});
+        assert.equal('Length of his name equals 0!', widget1.render());
+
+        let widget2 = c.compile({template: `Length of his name equals {$user.name|length()}!`}, {user: {name: ["A", "n", "d", "r", "e", "y"]}});
+        assert.equal('Length of his name equals 6!', widget2.render());
+
+        let widget3 = c.compile({template: `Length of his name equals {$user.name|length()}!`}, {user: {name: {"A": 1, "n": 2, "d": 3, "r": 4, "e": 5, "y": 6}}});
+        assert.equal('Length of his name equals 6!', widget3.render());
+
+        let widget4 = c.compile({template: `Length of his name equals {$user.name|length()}!`}, {user: {name: false}});
+        assert.equal('Length of his name equals 0!', widget4.render());
+
+        let widget5 = c.compile({template: `Length of his name equals {$user.name|length()}!`}, {user: {name: null}});
+        assert.equal('Length of his name equals 0!', widget5.render());
+
+        let widget6 = c.compile({template: `Length of his name equals {$user.name|length()}!`}, {user: {name: true}});
+        assert.equal('Length of his name equals 1!', widget6.render());
+    });
+
+    it('should support "exists" filter', () => {
+        
+        let widget = c.compile({template: `{$user.name|exists()}`}, {user: {name: "Andrey"}});
+        assert.equal('true', widget.render());
+
+        let widget1 = c.compile({template: `{$user.name|exists()}!`}, {user: {}});
+        assert.equal('false!', widget1.render());
+
+        let widget2 = c.compile({template: `{$user.name|exists()}!`}, {user: {name: ["A", "n", "d", "r", "e", "y"]}});
+        assert.equal('true!', widget2.render());
+
+        let widget3 = c.compile({template: `{$user.name|exists()}!`}, {user: {name: {"A": 1, "n": 2, "d": 3, "r": 4, "e": 5, "y": 6}}});
+        assert.equal('true!', widget3.render());
+
+        let widget4 = c.compile({template: `{$user.name|exists()}!`}, {user: {name: false}});
+        assert.equal('false!', widget4.render());
+
+        let widget5 = c.compile({template: `{$user.name|exists()}!`}, {user: {name: null}});
+        assert.equal('false!', widget5.render());
+
+        let widget6 = c.compile({template: `{$user.name|exists()}!`}, {user: {name: true}});
+        assert.equal('true!', widget6.render());
     });
 
     it('should support "length" filter inside conditional blocks', () => {

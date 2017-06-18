@@ -5,7 +5,18 @@ class Filter {
     }
 
     length() {
+        if (!this.value) return 0;
+        if (typeof(this.value) == "object" && !(this.value instanceof Array)) {
+            var counter = 0;
+            for (var k in this.value) counter++;
+            return counter;
+        }
+        if (this.value === true) return 1;
         return this.value.length;
+    }
+
+    exists() {
+        return this.length() > 0;
     }
 
     startswith(prefix) {
