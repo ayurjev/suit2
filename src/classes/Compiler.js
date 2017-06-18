@@ -1,4 +1,15 @@
 
+String.prototype.replaceAll = function(search, replacement) {
+    return this.replace(new RegExp(search, 'g'), replacement);
+};
+
+String.prototype.trimAll = function(mask) {
+    var s = this;
+    while (~mask.indexOf(s[0])) { s = s.slice(1); }
+    while (~mask.indexOf(s[s.length - 1])) { s = s.slice(0, -1); }
+    return s;
+}
+
 class Filter {
     constructor(value) {
         this.value = value;
@@ -146,11 +157,11 @@ export class Widget {
         }
 
         this.internal.subscribe = (eventName, cb, origin) => {
-            window.subscribe(eventName, cb, origin);
+            this.compiler.subscribe(eventName, cb, origin);
         }
 
         this.internal.broadcast = (eventName, message) => {
-            window.broadcast(eventName, message, this.internal.api);
+            this.compiler.broadcast(eventName, message, this.internal.api);
         }
     }
 
@@ -390,12 +401,70 @@ export class Widget {
     }
 }
 
+class ControllerFactory {
+    constructor(router) {
+        this.router = {};
+        for (var route_pattern in router) {
+            this.router[route_pattern.trimAll("/")] = router[route_pattern];
+        };
+    }
+
+    get(url) {
+        url = url.trimAll("/");
+
+        let fast_acs_controller = this.router[url];
+        if (fast_acs_controller != null) return fast_acs_controller;
+
+        var best_controller = null;
+        var best_controller_placeholders = 1000;
+        for (var route_pattern in this.router) {
+            if (this.isMatch(url, route_pattern)) {
+                var phCount = route_pattern.match(/<(.+?)>/g).length;
+                if (phCount < best_controller_placeholders) {
+                    best_controller = this.router[route_pattern];
+                    best_controller_placeholders = phCount;
+
+                    if (phCount == 1) return best_controller;
+                }
+            }
+        };
+        if (best_controller) return best_controller;
+        throw new Error("404 NotFound")
+    }
+
+    isMatch(url, routePattern) {
+        routePattern = "^" + routePattern + "$";
+        return (new RegExp(routePattern.trimAll("/").replaceAll("(<(.+?)>)", "(.+?)"))).test(url.trimAll("/"));
+    }
+}
+
 
 export class Compiler {
-    constructor(config) {
+    constructor(router, config) {
+        this.router = router || {};
         this.config = config || {};
         this.instances = {};
+        this.subscriptions = {};
         this.uids_cache = {};
+        this.router.strategy = this.router.strategy || new HashStrategy();
+
+        this.controllerFactory = new ControllerFactory(this.router);
+
+        this.initDomListeners();
+    }
+
+    initDomListeners() {
+        try {
+            document.body.addEventListener("click", (event) => {
+                if (event.target.tagName.toLowerCase() == "a") {
+                    this.router.strategy.onClick(event);
+                    event.preventDefault();
+                }
+            });
+
+            window.addEventListener('popstate', (e) => { this.load() }, false);
+
+        } catch (ReferenceError) {}
     }
 
     deepclone(source) {
@@ -516,6 +585,55 @@ export class Compiler {
         return widget;
     }
 
+    load(url) {
+
+        this.clear();
+
+        let loadTarget = this.getLoadTarget();
+
+        if (loadTarget) {
+
+            // compile baseWidget:
+            document.body.innerHTML = this.compile(loadTarget, this.config).render();
+
+            // initialize all <widget>'s:
+            var widgets = [].slice.call(document.getElementsByTagName("widget"));
+            widgets.forEach((widget) => {
+                var api = this.instances[widget.getAttribute("id")].api();
+                api.createListeners();
+            });
+        }
+    }
+
+    getLoadTarget(url) {
+        return this.controllerFactory.get(url || this.router.strategy.getCurrentLocation())
+    }
+
+    clear() {
+        this.instances = {};
+        this.subscriptions = {};
+    }
+
+    subscribe(eventName, cb, origin) {
+        if (!this.subscriptions[eventName]) this.subscriptions[eventName] = [];
+        this.subscriptions[eventName].push([cb, origin]);
+    };
+
+    broadcast(eventName, message, origin) {
+        if (this.subscriptions[eventName]) {
+            this.subscriptions[eventName].forEach((data) => {
+                let cb = data[0];
+                let required_origin = data[1];
+                if (!required_origin) cb(message, origin);
+                else {
+                    (required_origin instanceof Array ? required_origin : [required_origin]).forEach((obj) => {
+                        if (obj.uid && obj.uid() == origin.uid()) cb(message, obj);
+                    });
+                }
+            });
+        }
+    };
+
 }
 
 export class HashStrategy {
@@ -533,79 +651,10 @@ export class HashStrategy {
 
 try {
     var domReady = function(callback) {
-        document.readyState === "interactive" || document.readyState === "complete" ? callback() : document.addEventListener("DOMContentLoaded", callback);
+        document.readyState === "interactive" || document.readyState === "complete"
+        ? callback()
+        : document.addEventListener("DOMContentLoaded", callback);
     };
 
-    domReady(() => {
-        window.compiler = new Compiler();
-        window.clear = () => {
-            // init/clear instances storage:
-            compiler.instances = {};
-
-            // init/clear subscriptions:
-            window.subscriptions = {};
-        }
-
-        window.clear();
-
-        window.subscribe = (eventName, cb, origin) => {
-            if (!window.subscriptions[eventName]) window.subscriptions[eventName] = [];
-            window.subscriptions[eventName].push([cb, origin]);
-        };
-
-        window.broadcast = (eventName, message, origin) => {
-            if (window.subscriptions[eventName]) {
-                window.subscriptions[eventName].forEach((data) => {
-                    let cb = data[0];
-                    let required_origin = data[1];
-
-                    if (!required_origin) cb(message, origin);
-                    else {
-                        (required_origin instanceof Array ? required_origin : [required_origin]).forEach((obj) => {
-                            if (obj.uid && obj.uid() == origin.uid()) cb(message, obj);
-                        });
-                    }
-                });
-            }
-        };
-
-        // get routing strategy:
-        var strategy = window.router.strategy || new HashStrategy();
-
-        var load = function(url) {
-
-            // get loadTarget:
-            url = url || strategy.getCurrentLocation();
-            var loadTarget = window.router[url];
-
-            if (loadTarget) {
-
-                // compile baseWidget:
-                document.body.innerHTML = window.compiler.compile(loadTarget, window.config).render();
-
-                // initialize all <widget>'s:
-                var widgets = [].slice.call(document.getElementsByTagName("widget"));
-                widgets.forEach(function(widget) {
-                    var api = window.compiler.instances[widget.getAttribute("id")].api();
-                    api.createListeners();
-                });
-            }
-        }
-
-        document.body.addEventListener("click", function(event) {
-            if (event.target.tagName.toLowerCase() == "a") {
-                strategy.onClick(event);
-                event.preventDefault();
-                return false;
-            }
-        });
-
-        window.addEventListener('popstate', function(e){
-            window.clear();
-          load();
-        }, false);
-
-        load();
-
-    });
+    domReady(() => { (new Compiler(window.router, window.config)).load() });
 } catch (Exception) {}

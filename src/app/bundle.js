@@ -4,8 +4,6 @@
 var _Compiler = require("../classes/Compiler");
 
 window.router = {
-    "strategy": new _Compiler.HashStrategy(),
-
     "/": require("./widgets/Main"),
     "/page1/": require("./test_inclusion"),
     "/page1/subpage/": require("./subpage")
@@ -96,13 +94,141 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Filter = function () {
+    function Filter(value) {
+        _classCallCheck(this, Filter);
+
+        this.value = value;
+    }
+
+    _createClass(Filter, [{
+        key: "length",
+        value: function length() {
+            if (!this.value) return 0;
+            if (_typeof(this.value) == "object" && !(this.value instanceof Array)) {
+                var counter = 0;
+                for (var k in this.value) {
+                    counter++;
+                }return counter;
+            }
+            if (this.value === true) return 1;
+            return this.value.length;
+        }
+    }, {
+        key: "exists",
+        value: function exists() {
+            return this.length() > 0;
+        }
+    }, {
+        key: "startswith",
+        value: function startswith(prefix) {
+            return this.value.indexOf(prefix) == 0;
+        }
+    }, {
+        key: "endswith",
+        value: function endswith(suffix) {
+            return this.value.indexOf(suffix) == this.value.length - suffix.length;
+        }
+    }, {
+        key: "format",
+        value: function format(format_str) {
+            var date_obj;
+            if (this.value instanceof Date) date_obj = this.value;else date_obj = new Date(this.value);
+
+            if (Object.prototype.toString.call(date_obj) != "[object Date]" || isNaN(date_obj.getTime())) {
+                return date;
+            }
+            var pad = function pad(val) {
+                val = String(val);
+                return val.length == 1 ? "0" + val : val;
+            };
+            format_str = format_str.replace("%d", pad(date_obj.getDate()));
+            format_str = format_str.replace("%m", pad(date_obj.getMonth() + 1));
+            format_str = format_str.replace("%y", String(date_obj.getFullYear())[2] + String(date_obj.getFullYear())[3]);
+            format_str = format_str.replace("%Y", date_obj.getFullYear());
+            format_str = format_str.replace("%H", pad(date_obj.getHours()));
+            format_str = format_str.replace("%M", pad(date_obj.getMinutes()));
+            format_str = format_str.replace("%S", pad(date_obj.getSeconds()));
+            return format_str;
+        }
+    }, {
+        key: "in",
+        value: function _in(haystack) {
+            var needle = this.value;
+            if (typeof haystack == "string") {
+                try {
+                    haystack = JSON.parse(haystack);
+                } catch (e) {}
+            }
+            if (needle == null || haystack == null) {
+                return false;
+            }
+            if (typeof haystack == "string") {
+                return !!(haystack.indexOf(needle) > -1);
+            } else if (haystack instanceof Array) {
+                for (var i in haystack) {
+                    if (haystack[i] == needle) {
+                        return true;
+                    }
+                }
+                return false;
+            } else if (haystack instanceof Object) {
+                return needle in haystack;
+            } else {
+                return false;
+            }
+        }
+    }, {
+        key: "contains",
+        value: function contains(needle) {
+            return new Filter(needle).in(this.value);
+        }
+    }, {
+        key: "pluralword",
+        value: function pluralword(words) {
+            var initial_num = this.value;
+            if (typeof words == "string") words = JSON.parse(words);
+            var num = parseInt(initial_num) % 100;
+            var word;
+            if (num > 19) {
+                num = num % 10;
+            }
+            if (num == 1) {
+                word = words[0];
+            } else if (num == 2 || num == 3 || num == 4) {
+                word = words[1];
+            } else {
+                word = words[2];
+            }
+            return word;
+        }
+    }, {
+        key: "pluralform",
+        value: function pluralform(words) {
+            return this.value + " " + this.pluralword(words);
+        }
+    }, {
+        key: "html",
+        value: function html() {
+            return decodeURI(this.value.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x2F;/g, "/"));
+        }
+    }, {
+        key: "json",
+        value: function json() {
+            return JSON.stringify(this.value);
+        }
+    }]);
+
+    return Filter;
+}();
 
 var Widget = exports.Widget = function () {
     function Widget(cb, internal, compiler) {
@@ -134,7 +260,7 @@ var Widget = exports.Widget = function () {
                 var widget = document.getElementById(_this.internal.uid);
 
                 var target = widget;
-                if (_this.compiler.config.refresh_up) {
+                if (_this.compiler.config.refresh_up && _this.compiler.config.state == "shared") {
                     do {
                         target = widget;
                         widget = widget.find_parent("widget");
@@ -148,11 +274,11 @@ var Widget = exports.Widget = function () {
         };
 
         this.internal.subscribe = function (eventName, cb, origin) {
-            window.subscribe(eventName, cb, origin);
+            _this.compiler.subscribe(eventName, cb, origin);
         };
 
         this.internal.broadcast = function (eventName, message) {
-            window.broadcast(eventName, message, _this.internal.api);
+            _this.compiler.broadcast(eventName, message, _this.internal.api);
         };
     }
 
@@ -166,8 +292,7 @@ var Widget = exports.Widget = function () {
         value: function render(state) {
             this.internal.state = state || this.internal.state;
             var result = this.cb();
-            result = result.replace(/\s\s+/mig, " ");
-            return result;
+            return result.replace(/\s\s+/mig, " ");
         }
     }, {
         key: "exp",
@@ -175,11 +300,13 @@ var Widget = exports.Widget = function () {
             var _this2 = this;
 
             if (source === undefined) return "";
-
             source = source.trim();
 
             if (/\((.+?)\)/mig.test(source)) {
                 source = source.replace(/\((.+?)\)/mig, function (m, s) {
+                    if (s.indexOf('"') == 0 || s.indexOf("'") == 0) {
+                        return "(" + s + ")";
+                    }
                     return "(" + _this2.exp(s, additional_scope, iternum) + ")";
                 });
             }
@@ -202,6 +329,8 @@ var Widget = exports.Widget = function () {
             if (/(.+?)<=(.+?)/mig.test(source)) return this.cmp(source, "<=", additional_scope, iternum);
             if (/(.+?)>=(.+?)/mig.test(source)) return this.cmp(source, ">=", additional_scope, iternum);
 
+            if (source.indexOf("[") == 0 || source.indexOf("{") == 0) return source;
+
             return this.var(source, additional_scope, iternum);
         }
     }, {
@@ -210,37 +339,36 @@ var Widget = exports.Widget = function () {
             var that = this;
 
             if (source.indexOf("$") > -1) {
-
-                var default_value = null;
-                if (source.indexOf("$") == 0 && source.indexOf(":") > -1) {
-                    ;
-
-                    var _source$split = source.split(":");
-
-                    var _source$split2 = _slicedToArray(_source$split, 2);
-
-                    source = _source$split2[0];
-                    default_value = _source$split2[1];
-                }if (default_value) {
-                    source = that.extract(source, additional_scope, iternum) || default_value;
-                } else {
-                    source = source.replace(/\$([A-Za-z0-9_.]+)/mig, function (m, s) {
-                        return that.extract(m, additional_scope, iternum);
-                    });
-                }
+                source = source.replace(/\$[A-Za-zА-Яа-я0-9_.]+(\|+(.+?)[\)\s])*/mig, function (m, s) {
+                    var extracted_value = that.extract(m, additional_scope, iternum);
+                    if (extracted_value instanceof Array) extracted_value = JSON.stringify(extracted_value);
+                    return extracted_value;
+                });
             }
 
+            var result = null;
             try {
-                return eval(source);
+                result = eval(source);
             } catch (Exception) {
-                return source;
+                result = source;
             }
+
+            return result;
         }
     }, {
         key: "extract",
         value: function extract(path, additional_scope, iternum) {
+            var filter = null;
+            if (path.indexOf("$") == 0 && path.indexOf("|") > -1) {
+                ;
 
-            if (iternum && path == "$i") return iternum();
+                var _path$split = path.split("|");
+
+                var _path$split2 = _slicedToArray(_path$split, 2);
+
+                path = _path$split2[0];
+                filter = _path$split2[1];
+            }if (iternum && path == "$i") return iternum();
 
             path = path.replace("$$", "").replace("$", "").trim().split(".");
             var data = this.internal.state;
@@ -261,7 +389,36 @@ var Widget = exports.Widget = function () {
                     value = null;
                 }
             }
+
+            value = this.escape(value);
+
+            if (filter) {
+                var params;
+                if (filter.indexOf(")") != filter.length - 1) filter = filter + "()";else {
+                    var _filter$match = filter.match(/(.+?)\((.*?)\)$/);
+
+                    var _filter$match2 = _slicedToArray(_filter$match, 3);
+
+                    params = _filter$match2[2];
+
+                    if (params.length && params.indexOf('"') != 0 && params.indexOf("'") != 0 && params.indexOf('[') != 0 && params.indexOf('{') != 0) {
+                        filter = filter.replace(params, '"' + params + '"');
+                    }
+                }
+                value = eval("(new Filter(value))." + filter);
+            }
             return value;
+        }
+    }, {
+        key: "escape",
+        value: function escape(obj) {
+            if (typeof obj == "string") {
+                var entityMap = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': '&quot;', "'": '&#39;', "/": '&#x2F;' };
+                return obj.replace(/[&<>"'\/]/g, function (s) {
+                    return entityMap[s];
+                });
+            }
+            return obj;
         }
     }, {
         key: "cmp",
@@ -275,7 +432,15 @@ var Widget = exports.Widget = function () {
                 try {
                     return eval(this.exp(v1, additional_scope, iternum) + sep + this.exp(v2, additional_scope, iternum));
                 } catch (ReferenceError) {
-                    return eval(this.exp(v1, additional_scope, iternum) + sep + '`' + this.exp(v2, additional_scope, iternum) + '`');
+                    try {
+                        return eval(this.exp(v1, additional_scope, iternum) + sep + '`' + this.exp(v2, additional_scope, iternum) + '`');
+                    } catch (ReferenceError) {
+                        try {
+                            return eval('`' + this.exp(v1, additional_scope, iternum) + '`' + sep + this.exp(v2, additional_scope, iternum));
+                        } catch (ReferenceError) {
+                            return eval('`' + this.exp(v1, additional_scope, iternum) + '`' + sep + '`' + this.exp(v2, additional_scope, iternum) + '`');
+                        }
+                    }
                 }
             }
             return eval(this.exp(v1, additional_scope, iternum) + sep + this.exp(v2, additional_scope, iternum));
@@ -398,15 +563,38 @@ var Widget = exports.Widget = function () {
 }();
 
 var Compiler = exports.Compiler = function () {
-    function Compiler(config) {
+    function Compiler(router, config) {
         _classCallCheck(this, Compiler);
 
+        this.router = router || {};
         this.config = config || {};
         this.instances = {};
+        this.subscriptions = {};
         this.uids_cache = {};
+        this.router.strategy = this.router.strategy || new HashStrategy();
+
+        this.initDomListeners();
     }
 
     _createClass(Compiler, [{
+        key: "initDomListeners",
+        value: function initDomListeners() {
+            var _this3 = this;
+
+            try {
+                document.body.addEventListener("click", function (event) {
+                    if (event.target.tagName.toLowerCase() == "a") {
+                        _this3.router.strategy.onClick(event);
+                        event.preventDefault();
+                    }
+                });
+
+                window.addEventListener('popstate', function (e) {
+                    _this3.load();
+                }, false);
+            } catch (ReferenceError) {}
+        }
+    }, {
         key: "deepclone",
         value: function deepclone(source) {
 
@@ -465,6 +653,8 @@ var Compiler = exports.Compiler = function () {
     }, {
         key: "generateUID2",
         value: function generateUID2(t) {
+            // TODO: it is not good idea to use the whole temlate as a key...
+            // We should use a hash, but there is no md5 function in raw js
             if (this.uids_cache[t.template]) return this.uids_cache[t.template];else {
                 var uid = this.generateUID();
                 this.uids_cache[t.template] = uid;
@@ -532,6 +722,57 @@ var Compiler = exports.Compiler = function () {
 
             return widget;
         }
+    }, {
+        key: "load",
+        value: function load(url) {
+            var _this4 = this;
+
+            this.clear();
+
+            // get loadTarget:
+            url = url || this.router.strategy.getCurrentLocation();
+            var loadTarget = this.router[url];
+
+            if (loadTarget) {
+
+                // compile baseWidget:
+                document.body.innerHTML = this.compile(loadTarget, this.config).render();
+
+                // initialize all <widget>'s:
+                var widgets = [].slice.call(document.getElementsByTagName("widget"));
+                widgets.forEach(function (widget) {
+                    var api = _this4.instances[widget.getAttribute("id")].api();
+                    api.createListeners();
+                });
+            }
+        }
+    }, {
+        key: "clear",
+        value: function clear() {
+            this.instances = {};
+            this.subscriptions = {};
+        }
+    }, {
+        key: "subscribe",
+        value: function subscribe(eventName, cb, origin) {
+            if (!this.subscriptions[eventName]) this.subscriptions[eventName] = [];
+            this.subscriptions[eventName].push([cb, origin]);
+        }
+    }, {
+        key: "broadcast",
+        value: function broadcast(eventName, message, origin) {
+            if (this.subscriptions[eventName]) {
+                this.subscriptions[eventName].forEach(function (data) {
+                    var cb = data[0];
+                    var required_origin = data[1];
+                    if (!required_origin) cb(message, origin);else {
+                        (required_origin instanceof Array ? required_origin : [required_origin]).forEach(function (obj) {
+                            if (obj.uid && obj.uid() == origin.uid()) cb(message, obj);
+                        });
+                    }
+                });
+            }
+        }
     }]);
 
     return Compiler;
@@ -567,74 +808,7 @@ try {
     };
 
     domReady(function () {
-        window.compiler = new Compiler();
-        window.clear = function () {
-            // init/clear instances storage:
-            compiler.instances = {};
-
-            // init/clear subscriptions:
-            window.subscriptions = {};
-        };
-
-        window.clear();
-
-        window.subscribe = function (eventName, cb, origin) {
-            if (!window.subscriptions[eventName]) window.subscriptions[eventName] = [];
-            window.subscriptions[eventName].push([cb, origin]);
-        };
-
-        window.broadcast = function (eventName, message, origin) {
-            if (window.subscriptions[eventName]) {
-                window.subscriptions[eventName].forEach(function (data) {
-                    var cb = data[0];
-                    var required_origin = data[1];
-
-                    if (!required_origin) cb(message, origin);else {
-                        (required_origin instanceof Array ? required_origin : [required_origin]).forEach(function (obj) {
-                            if (obj.uid && obj.uid() == origin.uid()) cb(message, obj);
-                        });
-                    }
-                });
-            }
-        };
-
-        // get routing strategy:
-        var strategy = window.router.strategy || new HashStrategy();
-
-        var load = function load(url) {
-
-            // get loadTarget:
-            url = url || strategy.getCurrentLocation();
-            var loadTarget = window.router[url];
-
-            if (loadTarget) {
-
-                // compile baseWidget:
-                document.body.innerHTML = window.compiler.compile(loadTarget, window.config).render();
-
-                // initialize all <widget>'s:
-                var widgets = [].slice.call(document.getElementsByTagName("widget"));
-                widgets.forEach(function (widget) {
-                    var api = window.compiler.instances[widget.getAttribute("id")].api();
-                    api.createListeners();
-                });
-            }
-        };
-
-        document.body.addEventListener("click", function (event) {
-            if (event.target.tagName.toLowerCase() == "a") {
-                strategy.onClick(event);
-                event.preventDefault();
-                return false;
-            }
-        });
-
-        window.addEventListener('popstate', function (e) {
-            window.clear();
-            load();
-        }, false);
-
-        load();
+        new Compiler(window.router, window.config).load();
     });
 } catch (Exception) {}
 
