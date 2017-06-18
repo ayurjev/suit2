@@ -7,6 +7,16 @@ describe('Compiler', () => {
 
     let c = new Compiler();
 
+    it('should support "json" filter', () => {
+
+        let widget1 = c.compile({template: `{$user}!`}, {user: {name: "Andrey"}});
+        assert.equal(`[object Object]!`, widget1.render());
+
+        let widget2 = c.compile({template: `{$user|json()}!`}, {user: {name: "Andrey"}});
+        assert.equal(`{"name":"Andrey"}!`, widget2.render());
+
+    });
+
     it('should support "length" filter', () => {
 
         let widget = c.compile({template: `Length of his name equals {$user.name|length()}!`}, {user: {name: "Andrey"}});
@@ -32,7 +42,7 @@ describe('Compiler', () => {
     });
 
     it('should support "exists" filter', () => {
-        
+
         let widget = c.compile({template: `{$user.name|exists()}`}, {user: {name: "Andrey"}});
         assert.equal('true', widget.render());
 

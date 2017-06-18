@@ -97,6 +97,10 @@ class Filter {
         );
     }
 
+    json() {
+        return JSON.stringify(this.value);
+    }
+
 }
 
 export class Widget {
