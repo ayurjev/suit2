@@ -404,31 +404,48 @@ export class Widget {
 class ControllerFactory {
     constructor(router) {
         this.router = {};
-        for (var route_pattern in router) {
-            this.router[route_pattern.trimAll("/")] = router[route_pattern];
+        for (var routePattern in router) {
+            this.router[routePattern.trimAll("/")] = router[routePattern];
         };
+    }
+
+    extractParameters(url, routePattern) {
+        var result = {};
+        let names = routePattern.trimAll("/").split("/");
+        let values = url.trimAll("/").split("/");
+
+        for (var i=0; i<names.length; i++) {
+            var name = names[i];
+            if ((new RegExp("<.+?>")).test(name)) {
+                var trimmedName = name.replaceAll("<", "").replaceAll(">", "");
+                result[trimmedName] = values[i];
+            }
+        }
+        return result;
     }
 
     get(url) {
         url = url.trimAll("/");
 
         let fast_acs_controller = this.router[url];
-        if (fast_acs_controller != null) return fast_acs_controller;
+        if (fast_acs_controller != null) return {"controller": fast_acs_controller, "request": {}};
 
         var best_controller = null;
+        var best_controller_request = {};
         var best_controller_placeholders = 1000;
-        for (var route_pattern in this.router) {
-            if (this.isMatch(url, route_pattern)) {
-                var phCount = route_pattern.match(/<(.+?)>/g).length;
+        for (var routePattern in this.router) {
+            if (this.isMatch(url, routePattern)) {
+                var phCount = routePattern.match(/<(.+?)>/g).length;
                 if (phCount < best_controller_placeholders) {
-                    best_controller = this.router[route_pattern];
+                    best_controller = this.router[routePattern];
+                    best_controller_request = this.extractParameters(url, routePattern);
                     best_controller_placeholders = phCount;
 
-                    if (phCount == 1) return best_controller;
+                    if (phCount == 1) break;
                 }
             }
         };
-        if (best_controller) return best_controller;
+        if (best_controller) return {"controller": best_controller, "request": best_controller_request};
         throw new Error("404 NotFound")
     }
 
@@ -585,6 +602,10 @@ export class Compiler {
         return widget;
     }
 
+    compileTarget(target) {
+        return this.compile(target.controller, Object.assign({}, this.config, {"request": target.request}));
+    }
+
     load(url) {
 
         this.clear();
@@ -594,7 +615,7 @@ export class Compiler {
         if (loadTarget) {
 
             // compile baseWidget:
-            document.body.innerHTML = this.compile(loadTarget, this.config).render();
+            document.body.innerHTML = this.compileTarget(target).render();
 
             // initialize all <widget>'s:
             var widgets = [].slice.call(document.getElementsByTagName("widget"));
