@@ -1,12 +1,12 @@
 var assert = require('assert');
 
-import {Compiler,Widget} from "../src/classes/Compiler";
+import {App,Widget} from "../src/classes/App";
 
 
 describe('Router', () => {
 
     it('should select correct controller for clean urls and url with parameters', () => {
-        let c = new Compiler({
+        let c = new App({
             "/page1/": require("../src/app/test_inclusion"),
             "/page1/subpage/": require("../src/app/subpage"),
             "/page1/subpage/<name>/": require("../src/app/subpage"),
@@ -22,7 +22,7 @@ describe('Router', () => {
 
     it('should select correct controller despite usage of trailing slashes', () => {
         // routes are defined without trailing slash:
-        let c1 = new Compiler({
+        let c1 = new App({
             "/page1": require("../src/app/test_inclusion"),
             "/page1/subpage": require("../src/app/subpage"),
             "/page1/subpage/<name>": require("../src/app/subpage"),
@@ -37,7 +37,7 @@ describe('Router', () => {
         assert.equal(require("../src/app/digit"), c1.getLoadTarget("/page2/").controller);
 
         // routes are defined with trailing slashes:
-        let c2 = new Compiler({
+        let c2 = new App({
             "/": require("../src/app/test_inclusion"),
             "/page1/": require("../src/app/test_inclusion"),
             "/page1/subpage/": require("../src/app/subpage"),
@@ -56,7 +56,7 @@ describe('Router', () => {
 
     it('should select more specific pattern over those that are more general', () => {
         // helping order:
-        let c1 = new Compiler({
+        let c1 = new App({
             "/page1/subpage/<anything>/": require("../src/app/test_inclusion"),
             "/page1/<subpage>/<anything>/": require("../src/app/subpage"),
         });
@@ -64,7 +64,7 @@ describe('Router', () => {
         assert.equal(require("../src/app/subpage"), c1.getLoadTarget("/page1/anything/anything/").controller);
 
         // wrong order:
-        let c2 = new Compiler({
+        let c2 = new App({
             "/page1/<subpage>/<anything>/": require("../src/app/subpage"),
             "/page1/subpage/<anything>/": require("../src/app/test_inclusion"),
         });
@@ -86,7 +86,7 @@ describe('Router', () => {
             }
         }
 
-        let c = new Compiler({
+        let c = new App({
             "/<action>/": module1,
             "/page1/<subpage>/<anything>/": module2,
         });

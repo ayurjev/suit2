@@ -1,17 +1,15 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
 
-var _Compiler = require("../classes/Compiler");
+var _App = require("../classes/App");
 
-window.router = {
+new _App.App({
     "/": require("./widgets/Main"),
     "/page1/": require("./test_inclusion"),
     "/page1/subpage/": require("./subpage")
-};
+}, { user: { name: "Andrey", age: 28 } });
 
-window.config = { user: { name: "Andrey", age: 28 } };
-
-},{"../classes/Compiler":5,"./subpage":2,"./test_inclusion":3,"./widgets/Main":4}],2:[function(require,module,exports){
+},{"../classes/App":5,"./subpage":2,"./test_inclusion":3,"./widgets/Main":4}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -60,15 +58,12 @@ var init = exports.init = function init(internal) {
     };
 
     internal.api.createListeners = function () {
-
         internal.subscribe("TEST_INCLUSION_INITED", function (e) {
             console.dir(e);internal.say("GLOBAL");
         });
-
         internal.subscribe("TEST_INCLUSION_INITED", function (e) {
             console.dir(e);internal.say("EXCLUSIVE");
         }, internal.includes.test_inclusion);
-
         internal.broadcast("TEST_INCLUSION_INITED", { "local": 55 });
     };
 
@@ -94,198 +89,388 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-try {
+/**
+ *  Main Appilcation class
+ */
+var App = function () {
+    function App(router, config) {
+        _classCallCheck(this, App);
 
-    String.prototype.replaceAll = function (search, replacement) {
-        return this.replace(new RegExp(search, 'g'), replacement);
-    };
-
-    String.prototype.trimAll = function (mask) {
-        var s = this;
-        while (~mask.indexOf(s[0])) {
-            s = s.slice(1);
-        }
-        while (~mask.indexOf(s[s.length - 1])) {
-            s = s.slice(0, -1);
-        }
-        return s;
-    };
-
-    Element.prototype.find_parent = function (css) {
-        var parent = this.parentElement;
-        while (parent) {
-            if (parent.matches(css)) return parent;else parent = parent.parentElement;
-        }
-        return null;
-    };
-} catch (e) {}
-
-var Filter = function () {
-    function Filter(value) {
-        _classCallCheck(this, Filter);
-
-        this.value = value;
+        this.router = router || {};
+        this.config = config || {};
+        this.instances = {};
+        this.subscriptions = {};
+        this.uids_cache = {};
+        this.router.strategy = this.router.strategy || new HashStrategy();
+        this.controllerFactory = new ControllerFactory(this.router);
+        this.initDomListeners();
     }
 
-    _createClass(Filter, [{
-        key: "length",
-        value: function length() {
-            if (!this.value) return 0;
-            if (this.value instanceof Object) {
-                var counter = 0;
-                for (var k in this.value) {
-                    counter++;
-                }return counter;
-            }
-            if (this.value === true) return 1;
-            return this.value.length;
-        }
-    }, {
-        key: "format",
-        value: function format(format_str) {
-            var date_obj = this.value instanceof Date ? this.value : new Date(this.value);
-            if (Object.prototype.toString.call(date_obj) != "[object Date]" || isNaN(date_obj.getTime())) {
-                return date;
-            }
-            var pad = function pad(val) {
-                return String(val).length == 1 ? "0" + val : val;
+    /**
+     *  Initializing Dom Event Listeners
+     */
+
+
+    _createClass(App, [{
+        key: "initDomListeners",
+        value: function initDomListeners() {
+            var _this = this;
+
+            // domReady:
+            var domReadyCallback = function domReadyCallback() {
+
+                document.body.addEventListener("click", function (event) {
+                    if (event.target.tagName.toLowerCase() == "a") {
+                        _this.router.strategy.onClick(event);
+                        event.preventDefault();
+                    }
+                });
+
+                window.addEventListener('popstate', function (e) {
+                    _this.load();
+                }, false);
+                _this.load();
             };
-            format_str = format_str.replace("%d", pad(date_obj.getDate()));
-            format_str = format_str.replace("%m", pad(date_obj.getMonth() + 1));
-            format_str = format_str.replace("%y", String(date_obj.getFullYear())[2] + String(date_obj.getFullYear())[3]);
-            format_str = format_str.replace("%Y", date_obj.getFullYear());
-            format_str = format_str.replace("%H", pad(date_obj.getHours()));
-            format_str = format_str.replace("%M", pad(date_obj.getMinutes()));
-            format_str = format_str.replace("%S", pad(date_obj.getSeconds()));
-            return format_str;
+
+            try {
+                /**
+                 * findParent for dom-elements
+                 */
+                Element.prototype.findParent = function (css) {
+                    var parent = this.parentElement;
+                    while (parent) {
+                        if (parent.matches(css)) return parent;else parent = parent.parentElement;
+                    }
+                    return null;
+                };
+
+                window.app = this;
+                document.readyState === "interactive" || document.readyState === "complete" ? domReadyCallback() : document.addEventListener("DOMContentLoaded", domReadyCallback);
+            } catch (e) {}
         }
+
+        /**
+         *  Deep copying for objects
+         */
+
     }, {
-        key: "in",
-        value: function _in(haystack) {
-            var needle = this.value;
-            if (needle == null || haystack == null) {
-                return false;
-            }
-            if (typeof haystack == "string") {
-                try {
-                    haystack = JSON.parse(haystack);
-                } catch (e) {
-                    return !!(haystack.indexOf(needle) > -1);
+        key: "deepClone",
+        value: function deepClone(source) {
+            if (this.config.state == "shared") return source;
+            var destination = {};
+            for (var property in source) {
+                if (_typeof(source[property]) === "object" && source[property] !== null) {
+                    destination[property] = this.deepClone(source[property]);
+                } else {
+                    destination[property] = source[property];
                 }
             }
-            if (haystack instanceof Array) {
-                return haystack.indexOf(needle) > -1;
+            return destination;
+        }
+    }, {
+        key: "chunks",
+
+
+        /**
+         *  Reading/compiling template using stack for correct splitting template into chunks
+         */
+        value: function chunks(template, compile_cb) {
+            var repl = {};
+
+            var start = template.indexOf("{");
+
+            while (start > -1) {
+                var stack = 1;
+                var p = start;
+
+                while (stack > 0) {
+                    p++;
+                    if (template[p] == "{") stack++;
+                    if (template[p] == "}") stack--;
+                }
+
+                var to_compile = template.slice(start, p + 1);
+                var compiled = compile_cb(to_compile);
+
+                var next_start = template.slice(p + 1, template.length).indexOf("{");
+                if (next_start > -1) start = p + next_start + 1;else start = -1;
+
+                repl[to_compile] = compiled;
             }
-            if (haystack instanceof Object) {
-                return needle in haystack;
+
+            for (to_compile in repl) {
+                template = template.replace(to_compile, repl[to_compile]);
+            }
+
+            return template;
+        }
+
+        /**
+         * Generating UID for widgets (with cache)
+         */
+
+    }, {
+        key: "generateUID",
+        value: function generateUID(t) {
+            // TODO: it is not good idea to use the whole temlate as a key...
+            // We should use a hash, but there is no md5 function in raw js
+            if (this.uids_cache[t.template]) return this.uids_cache[t.template];else {
+                var p = function p() {
+                    return ("000" + (Math.random() * 46656 | 0).toString(36)).slice(-3);
+                };
+                var uid = p() + p();
+                this.uids_cache[t.template] = uid;
+                return uid;
             }
         }
+
+        /**
+         *  Compiling js-module into Widget-instance
+         */
+
     }, {
-        key: "pluralword",
-        value: function pluralword(words) {
-            if (typeof words == "string") words = JSON.parse(words);
-            var num = parseInt(this.value) % 100;
-            if (num > 19) {
-                num = num % 10;
+        key: "compile",
+        value: function compile(t, state, includes) {
+
+            var uid = this.generateUID(t);
+            var prev_state = this.instances[uid] ? this.instances[uid].internal.state : {};
+            var internal = new Internal(uid, Object.assign(prev_state, state), includes);
+
+            if (t.init) t.init(internal);
+
+            var template;
+            try {
+                if (window) {
+                    template = '<widget id="' + uid + '">' + t.template + '</widget>';
+                }
+            } catch (ReferenceError) {
+                template = t.template;
             }
-            return { 1: words[0], 2: words[1], 3: words[1], 4: words[1] }[num] || words[2];
+
+            template = template.replace(/\s\s+/mig, " ").trim();
+            template = this.chunks(template, function (to_compile) {
+                return to_compile.replace(/{((.|\n)+)}/ig, function (m, s) {
+                    return "`+this.exp(`" + s + "`)+`";
+                });
+            });
+
+            this.instances[uid] = new Widget(function () {
+                return eval('() => { return `' + template + '`}')();
+            }, internal, this);
+
+            return this.instances[uid];
+        }
+
+        /**
+         *  Compiling "target-controller" (returned by ControllerFactory)
+         */
+
+    }, {
+        key: "compileTarget",
+        value: function compileTarget(target) {
+            return this.compile(target.controller, Object.assign({}, this.config, { "request": target.request }));
+        }
+
+        /**
+         *  Loading current controller (returned by ControllerFactory according to the app's routing)
+         */
+
+    }, {
+        key: "load",
+        value: function load() {
+            this.clear();
+            this.loadTarget(this.getLoadTarget());
+        }
+
+        /**
+         *  Loading given controller into DOM
+         */
+
+    }, {
+        key: "loadTarget",
+        value: function loadTarget(_loadTarget) {
+            var _this2 = this;
+
+            if (_loadTarget) {
+                document.body.innerHTML = this.compileTarget(_loadTarget).render();
+
+                var widgets = [].slice.call(document.getElementsByTagName("widget"));
+                widgets.forEach(function (widget) {
+                    var api = _this2.instances[widget.getAttribute("id")].api();
+                    api.createListeners();
+                });
+            }
+        }
+
+        /**
+         * Choosing controller from router based on current URL
+         */
+
+    }, {
+        key: "getLoadTarget",
+        value: function getLoadTarget(url) {
+            return this.controllerFactory.get(url || this.router.strategy.getCurrentLocation());
+        }
+
+        /**
+         * Clearing Application state (attributes that can be regenerated during page load)
+         */
+
+    }, {
+        key: "clear",
+        value: function clear() {
+            this.instances = {};
+            this.subscriptions = {};
+        }
+
+        /**
+         *  Adding new subscription
+         */
+
+    }, {
+        key: "subscribe",
+        value: function subscribe(eventName, cb, origin) {
+            if (!this.subscriptions[eventName]) this.subscriptions[eventName] = [];
+            this.subscriptions[eventName].push([cb, origin]);
         }
     }, {
-        key: "html",
-        value: function html() {
-            return decodeURI(this.value.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x2F;/g, "/"));
-        }
-    }, {
-        key: "json",
-        value: function json() {
-            return JSON.stringify(this.value);
-        }
-    }, {
-        key: "exists",
-        value: function exists() {
-            return this.length() > 0;
-        }
-    }, {
-        key: "pluralform",
-        value: function pluralform(words) {
-            return this.value + " " + this.pluralword(words);
-        }
-    }, {
-        key: "startswith",
-        value: function startswith(prefix) {
-            return this.value.indexOf(prefix) == 0;
-        }
-    }, {
-        key: "endswith",
-        value: function endswith(suffix) {
-            return this.value.indexOf(suffix) == this.value.length - suffix.length;
-        }
-    }, {
-        key: "contains",
-        value: function contains(needle) {
-            return new Filter(needle).in(this.value);
+        key: "broadcast",
+
+
+        /**
+         *  Firing new event to all subscribers
+         */
+        value: function broadcast(eventName, message, origin) {
+            if (this.subscriptions[eventName]) {
+                this.subscriptions[eventName].forEach(function (data) {
+                    var cb = data[0];
+                    var required_origin = data[1];
+                    if (!required_origin) cb(message, origin);else {
+                        (required_origin instanceof Array ? required_origin : [required_origin]).forEach(function (obj) {
+                            if (obj.uid && obj.uid() == origin.uid()) cb(message, obj);
+                        });
+                    }
+                });
+            }
         }
     }]);
 
-    return Filter;
+    return App;
 }();
 
-var Widget = exports.Widget = function () {
-    function Widget(cb, internal, compiler) {
-        var _this = this;
+/**
+ *  Internal Represention of Widget
+ */
 
-        _classCallCheck(this, Widget);
 
-        this.compiler = compiler;
-        this.cb = cb;
-        this.internal = internal;
+exports.App = App;
 
-        this.internal.refresh = function () {
+var Internal = function () {
+    function Internal(uid, state, includes) {
+        var _this3 = this;
+
+        _classCallCheck(this, Internal);
+
+        this.uid = uid;
+        this.tag = function () {
             try {
-                var widget = document.getElementById(_this.internal.uid);
-                var target = widget;
-                if (_this.compiler.config.refresh_up && _this.compiler.config.state == "shared") {
-                    do {
-                        target = widget;
-                        widget = widget.find_parent("widget");
-                    } while (widget);
-                }
-
-                target.outerHTML = _this.compiler.instances[target.getAttribute("id")].render();
+                return document.getElementById(_this3.uid);
             } catch (e) {}
         };
-
-        this.internal.subscribe = function (eName, cb, origin) {
-            _this.compiler.subscribe(eName, cb, origin);
+        this.api = {
+            createListeners: function createListeners() {},
+            uid: function uid() {
+                return _this3.uid;
+            }
         };
-        this.internal.broadcast = function (eName, message) {
-            _this.compiler.broadcast(eName, message, _this.internal.api);
+        this.state = state || {};
+        this.includes = includes || {};
+
+        this.subscribe = function (eName, cb, origin) {
+            window.app.subscribe(eName, cb, origin);
+        };
+        this.broadcast = function (eName, message) {
+            window.app.broadcast(eName, message, _this3.api);
         };
     }
+
+    /**
+     * Refreshing widget in DOM
+     */
+
+
+    _createClass(Internal, [{
+        key: "refresh",
+        value: function refresh() {
+            try {
+                var tag = this.tag();
+                var target = tag;
+                if (window.app.config.refresh_up && window.app.config.state == "shared") {
+                    do {
+                        target = tag;tag = tag.findParent("widget");
+                    } while (tag);
+                }
+
+                target.outerHTML = window.app.instances[target.getAttribute("id")].render();
+            } catch (e) {}
+        }
+    }]);
+
+    return Internal;
+}();
+
+/**
+ *  Widget (aka Component)
+ */
+
+
+var Widget = exports.Widget = function () {
+    function Widget(cb, internal, app) {
+        _classCallCheck(this, Widget);
+
+        this.app = app;
+        this.cb = cb;
+        this.internal = internal;
+    }
+
+    /**
+     * Getting Public Api of the Widget
+     */
+
 
     _createClass(Widget, [{
         key: "api",
         value: function api() {
             return this.internal.api;
         }
+
+        /**
+         *  Rendering Widget into string
+         */
+
     }, {
         key: "render",
         value: function render(state) {
             this.internal.state = state || this.internal.state;
             return this.cb().replace(/\s\s+/mig, " ");
         }
+
+        /**
+         *  Executing template engine expression - {}
+         */
+
     }, {
         key: "exp",
         value: function exp(source, additional_scope, iternum) {
-            var _this2 = this;
+            var _this4 = this;
 
             try {
                 source = source.trim();
@@ -295,7 +480,7 @@ var Widget = exports.Widget = function () {
 
             if (/\((.+?)\)/mig.test(source)) {
                 source = source.replace(/\((.+?)\)/mig, function (m, s) {
-                    return "(" + _this2.exp(s, additional_scope, iternum) + ")";
+                    return "(" + _this4.exp(s, additional_scope, iternum) + ")";
                 });
             }
 
@@ -319,6 +504,11 @@ var Widget = exports.Widget = function () {
             if (source.indexOf("[") == 0 || source.indexOf("{") == 0) return source;
             return this.var(source, additional_scope, iternum);
         }
+
+        /**
+         * Executing call for a variable
+         */
+
     }, {
         key: "var",
         value: function _var(source, additional_scope, iternum) {
@@ -337,6 +527,11 @@ var Widget = exports.Widget = function () {
             }
             return result;
         }
+
+        /**
+         * Extracting variable's value
+         */
+
     }, {
         key: "extract",
         value: function extract(path, additional_scope, iternum) {
@@ -380,11 +575,16 @@ var Widget = exports.Widget = function () {
                     filter = filter.replace(params, '"' + params + '"');
                 }
 
-                value = eval("(new Filter(value))." + filter);
+                value = eval("(new Filters(value))." + filter);
             }
 
             return value;
         }
+
+        /**
+         *  Escaping special characters
+         */
+
     }, {
         key: "escape",
         value: function escape(obj) {
@@ -396,25 +596,35 @@ var Widget = exports.Widget = function () {
             }
             return obj;
         }
+
+        /**
+         * Evaluating basic js logic operations
+         */
+
     }, {
         key: "cmp2",
-        value: function cmp2(v1, v2, sep, additional_scope, iternum) {
+        value: function cmp2(v1, v2, op, additional_scope, iternum) {
             v1 = this.exp(v1, additional_scope, iternum);
             v2 = this.exp(v2, additional_scope, iternum);
             try {
-                return eval(v1 + sep + v2);
+                return eval(v1 + op + v2);
             } catch (ReferenceError) {
                 try {
-                    return eval(v1 + sep + '`' + v2 + '`');
+                    return eval(v1 + op + '`' + v2 + '`');
                 } catch (ReferenceError) {
                     try {
-                        return eval('`' + v1 + '`' + sep + v2);
+                        return eval('`' + v1 + '`' + op + v2);
                     } catch (ReferenceError) {
-                        return eval('`' + v1 + '`' + sep + '`' + v2 + '`');
+                        return eval('`' + v1 + '`' + op + '`' + v2 + '`');
                     }
                 }
             }
         }
+
+        /**
+         *  Evaluating ternanry logic
+         */
+
     }, {
         key: "ternary",
         value: function ternary(var_name, additional_scope, iternum) {
@@ -428,6 +638,11 @@ var Widget = exports.Widget = function () {
 
             return this.exp(path, additional_scope, iternum) ? this.exp(positive, additional_scope, iternum) : this.exp(negative, additional_scope, iternum);
         }
+
+        /**
+         * Evaluating iterations/lists
+         */
+
     }, {
         key: "list",
         value: function list(expression, additional_scope, iternum) {
@@ -447,7 +662,7 @@ var Widget = exports.Widget = function () {
 
             if (itertemplate[0] != "{") itertemplate = "{" + itertemplate + "}";
 
-            var itertemplate_compiled = this.compiler.chunks(itertemplate, function (to_compile) {
+            var itertemplate_compiled = this.app.chunks(itertemplate, function (to_compile) {
                 return to_compile.replace(/{((.|\n)+)}/ig, function (m, s) {
                     return "` + ((widget, scope, iternum) => { return widget.exp(`" + s + "`, scope, iternum); })(widget, scope, iternum) + `";
                 });
@@ -466,6 +681,11 @@ var Widget = exports.Widget = function () {
 
             return out;
         }
+
+        /**
+         * Including other widgets
+         */
+
     }, {
         key: "include",
         value: function include(expression, additional_scope, iternum) {
@@ -484,7 +704,7 @@ var Widget = exports.Widget = function () {
                 require(expression);
             }
 
-            var widget = this.compiler.compile(t, Object.assign({}, this.compiler.deepclone(this.internal.state), additional_scope));
+            var widget = this.app.compile(t, Object.assign({}, this.app.deepClone(this.internal.state), additional_scope));
 
             if (t.uid instanceof Function) {
                 this.internal.includes[expression] = [t, widget.api()];
@@ -498,16 +718,24 @@ var Widget = exports.Widget = function () {
 
             return widget.render();
         }
+
+        /**
+         * Building scope from string and iteration data
+         */
+
     }, {
         key: "scope",
         value: function scope(data, additional_scope, iternum) {
             if (data.indexOf("[") == 0 || data.indexOf("{") == 0) {
-                data = this.var(data, additional_scope, iternum);
-                data = JSON.parse(data);
+                data = JSON.parse(this.var(data, additional_scope, iternum));
             } else data = this.extract(data);
-
-            return Object.assign({}, this.compiler.deepclone(this.internal.state), data);
+            return Object.assign({}, this.app.deepClone(this.internal.state), data);
         }
+
+        /**
+         * Including widgets with additional data, passed as substate
+         */
+
     }, {
         key: "include_with",
         value: function include_with(expression, additional_scope, iternum) {
@@ -522,6 +750,11 @@ var Widget = exports.Widget = function () {
             }
             return this.include(expression, additional_scope, iternum);
         }
+
+        /**
+         *  Generating new widget using other widget as a template
+         */
+
     }, {
         key: "rebuild",
         value: function rebuild(expression, additional_scope, iternum) {
@@ -537,6 +770,11 @@ var Widget = exports.Widget = function () {
     return Widget;
 }();
 
+/**
+ * Factory for selecting controllers
+ */
+
+
 var ControllerFactory = function () {
     function ControllerFactory(router) {
         _classCallCheck(this, ControllerFactory);
@@ -546,6 +784,11 @@ var ControllerFactory = function () {
             this.router[routePattern.trimAll("/")] = router[routePattern];
         };
     }
+
+    /**
+     * Extracting parameters from url's
+     */
+
 
     _createClass(ControllerFactory, [{
         key: "extractParameters",
@@ -563,14 +806,20 @@ var ControllerFactory = function () {
             }
             return result;
         }
+
+        /**
+         * Selecting controller based on given URL
+         */
+
     }, {
         key: "get",
         value: function get(url) {
             url = url.trimAll("/");
-
+            // Fast Access Controller (full match)
             var fast_acs_controller = this.router[url];
             if (fast_acs_controller != null) return { "controller": fast_acs_controller, "request": {} };
 
+            // Searching for best option:
             var best_controller = null;
             var best_controller_request = {};
             var best_controller_placeholders = 1000;
@@ -581,6 +830,7 @@ var ControllerFactory = function () {
                         best_controller = this.router[routePattern];
                         best_controller_request = this.extractParameters(url, routePattern);
                         best_controller_placeholders = phCount;
+                        // Match found with minimum amount of placeholders - no need to keep looking...
                         if (phCount == 1) break;
                     }
                 }
@@ -588,6 +838,11 @@ var ControllerFactory = function () {
             if (best_controller) return { "controller": best_controller, "request": best_controller_request };
             throw new Error("404 NotFound");
         }
+
+        /**
+         * Checking if url matches given route pattern
+         */
+
     }, {
         key: "isMatch",
         value: function isMatch(url, routePattern) {
@@ -599,213 +854,10 @@ var ControllerFactory = function () {
     return ControllerFactory;
 }();
 
-var Compiler = exports.Compiler = function () {
-    function Compiler(router, config) {
-        _classCallCheck(this, Compiler);
+/**
+ * Strategy for navigation based on location.hash
+ */
 
-        this.router = router || {};
-        this.config = config || {};
-        this.instances = {};
-        this.subscriptions = {};
-        this.uids_cache = {};
-        this.router.strategy = this.router.strategy || new HashStrategy();
-
-        this.controllerFactory = new ControllerFactory(this.router);
-
-        this.initDomListeners();
-    }
-
-    _createClass(Compiler, [{
-        key: "initDomListeners",
-        value: function initDomListeners() {
-            var _this3 = this;
-
-            try {
-                document.body.addEventListener("click", function (event) {
-                    if (event.target.tagName.toLowerCase() == "a") {
-                        _this3.router.strategy.onClick(event);
-                        event.preventDefault();
-                    }
-                });
-
-                window.addEventListener('popstate', function (e) {
-                    _this3.load();
-                }, false);
-            } catch (ReferenceError) {}
-        }
-    }, {
-        key: "deepclone",
-        value: function deepclone(source) {
-            if (this.config.state == "shared") return source;
-            var destination = {};
-            for (var property in source) {
-                if (_typeof(source[property]) === "object" && source[property] !== null) {
-                    destination[property] = this.deepclone(source[property]);
-                } else {
-                    destination[property] = source[property];
-                }
-            }
-            return destination;
-        }
-    }, {
-        key: "chunks",
-        value: function chunks(template, compile_cb) {
-            var repl = {};
-
-            var start = template.indexOf("{");
-
-            while (start > -1) {
-                var stack = 1;
-                var p = start;
-
-                while (stack > 0) {
-                    p++;
-                    if (template[p] == "{") stack++;
-                    if (template[p] == "}") stack--;
-                }
-
-                var to_compile = template.slice(start, p + 1);
-                var compiled = compile_cb(to_compile);
-
-                var next_start = template.slice(p + 1, template.length).indexOf("{");
-                if (next_start > -1) start = p + next_start + 1;else start = -1;
-
-                repl[to_compile] = compiled;
-            }
-
-            for (to_compile in repl) {
-                template = template.replace(to_compile, repl[to_compile]);
-            }
-
-            return template;
-        }
-    }, {
-        key: "generateUID",
-        value: function generateUID() {
-            var p = function p() {
-                return ("000" + (Math.random() * 46656 | 0).toString(36)).slice(-3);
-            };
-            return p() + p();
-        }
-    }, {
-        key: "generateUID2",
-        value: function generateUID2(t) {
-            // TODO: it is not good idea to use the whole temlate as a key...
-            // We should use a hash, but there is no md5 function in raw js
-            if (this.uids_cache[t.template]) return this.uids_cache[t.template];else {
-                var uid = this.generateUID();
-                this.uids_cache[t.template] = uid;
-                return uid;
-            }
-        }
-    }, {
-        key: "compile",
-        value: function compile(t, state, includes) {
-
-            var uid = this.generateUID2(t);
-            var prev_state = this.instances[uid] ? this.instances[uid].internal.state : {};
-            var internal = new Internal(uid, Object.assign(prev_state, state), includes);
-
-            if (t.init) t.init(internal);
-
-            var template;
-            try {
-                if (window) {
-                    template = '<widget id="' + uid + '">' + t.template + '</widget>';
-                }
-            } catch (ReferenceError) {
-                template = t.template;
-            }
-
-            template = template.replace(/\s\s+/mig, " ").trim();
-            template = this.chunks(template, function (to_compile) {
-                return to_compile.replace(/{((.|\n)+)}/ig, function (m, s) {
-                    return "`+this.exp(`" + s + "`)+`";
-                });
-            });
-
-            this.instances[uid] = new Widget(function () {
-                return eval('() => { return `' + template + '`}')();
-            }, internal, this);
-
-            return this.instances[uid];
-        }
-    }, {
-        key: "compileTarget",
-        value: function compileTarget(target) {
-            return this.compile(target.controller, Object.assign({}, this.config, { "request": target.request }));
-        }
-    }, {
-        key: "load",
-        value: function load(url) {
-            var _this4 = this;
-
-            this.clear();
-
-            var loadTarget = this.getLoadTarget();
-
-            if (loadTarget) {
-                document.body.innerHTML = this.compileTarget(loadTarget).render();
-
-                var widgets = [].slice.call(document.getElementsByTagName("widget"));
-                widgets.forEach(function (widget) {
-                    var api = _this4.instances[widget.getAttribute("id")].api();
-                    api.createListeners();
-                });
-            }
-        }
-    }, {
-        key: "getLoadTarget",
-        value: function getLoadTarget(url) {
-            return this.controllerFactory.get(url || this.router.strategy.getCurrentLocation());
-        }
-    }, {
-        key: "clear",
-        value: function clear() {
-            this.instances = {};
-            this.subscriptions = {};
-        }
-    }, {
-        key: "subscribe",
-        value: function subscribe(eventName, cb, origin) {
-            if (!this.subscriptions[eventName]) this.subscriptions[eventName] = [];
-            this.subscriptions[eventName].push([cb, origin]);
-        }
-    }, {
-        key: "broadcast",
-        value: function broadcast(eventName, message, origin) {
-            if (this.subscriptions[eventName]) {
-                this.subscriptions[eventName].forEach(function (data) {
-                    var cb = data[0];
-                    var required_origin = data[1];
-                    if (!required_origin) cb(message, origin);else {
-                        (required_origin instanceof Array ? required_origin : [required_origin]).forEach(function (obj) {
-                            if (obj.uid && obj.uid() == origin.uid()) cb(message, obj);
-                        });
-                    }
-                });
-            }
-        }
-    }]);
-
-    return Compiler;
-}();
-
-var Internal = function Internal(uid, state, includes) {
-    var _this5 = this;
-
-    _classCallCheck(this, Internal);
-
-    this.uid = uid;
-    this.api = {
-        createListeners: function createListeners() {},
-        uid: function uid() {
-            return _this5.uid;
-        }
-    };
-    this.state = state || {};
-    this.includes = includes || {};
-};
 
 var HashStrategy = exports.HashStrategy = function () {
     function HashStrategy() {
@@ -829,16 +881,170 @@ var HashStrategy = exports.HashStrategy = function () {
     return HashStrategy;
 }();
 
-try {
+/**
+ * Filters for variables
+ */
 
-    var domReady = function domReady(callback) {
-        document.readyState === "interactive" || document.readyState === "complete" ? callback() : document.addEventListener("DOMContentLoaded", callback);
-    };
 
-    domReady(function () {
-        window.compiler = new Compiler(window.router, window.config);
-        window.compiler.load();
-    });
-} catch (e) {}
+var Filters = exports.Filters = function () {
+    function Filters(value) {
+        _classCallCheck(this, Filters);
+
+        this.value = value;
+    }
+
+    /**
+     * Length of the object
+     */
+
+
+    _createClass(Filters, [{
+        key: "length",
+        value: function length() {
+            if (!this.value) return 0;
+            if (this.value instanceof Object) {
+                var counter = 0;
+                for (var k in this.value) {
+                    counter++;
+                }return counter;
+            }
+            if (this.value === true) return 1;
+            return this.value.length;
+        }
+
+        /**
+         * Formatting dates/times
+         */
+
+    }, {
+        key: "format",
+        value: function format(format_str) {
+            var date_obj = this.value instanceof Date ? this.value : new Date(this.value);
+            if (Object.prototype.toString.call(date_obj) != "[object Date]" || isNaN(date_obj.getTime())) {
+                return date;
+            }
+            var pad = function pad(val) {
+                return String(val).length == 1 ? "0" + val : val;
+            };
+            format_str = format_str.replace("%d", pad(date_obj.getDate()));
+            format_str = format_str.replace("%m", pad(date_obj.getMonth() + 1));
+            format_str = format_str.replace("%y", String(date_obj.getFullYear())[2] + String(date_obj.getFullYear())[3]);
+            format_str = format_str.replace("%Y", date_obj.getFullYear());
+            format_str = format_str.replace("%H", pad(date_obj.getHours()));
+            format_str = format_str.replace("%M", pad(date_obj.getMinutes()));
+            format_str = format_str.replace("%S", pad(date_obj.getSeconds()));
+            return format_str;
+        }
+
+        /**
+         * Searching variable in some haystack
+         */
+
+    }, {
+        key: "in",
+        value: function _in(haystack) {
+            var needle = this.value;
+            if (needle == null || haystack == null) {
+                return false;
+            }
+            if (typeof haystack == "string") {
+                try {
+                    haystack = JSON.parse(haystack);
+                } catch (e) {
+                    return !!(haystack.indexOf(needle) > -1);
+                }
+            }
+            if (haystack instanceof Array) {
+                return haystack.indexOf(needle) > -1;
+            }
+            if (haystack instanceof Object) {
+                return needle in haystack;
+            }
+        }
+    }, {
+        key: "pluralword",
+
+
+        /**
+         *  Selecting correct form of the word based on given number
+         */
+        value: function pluralword(words) {
+            if (typeof words == "string") words = JSON.parse(words);
+            var num = parseInt(this.value) % 100;
+            if (num > 19) {
+                num = num % 10;
+            }
+            return { 1: words[0], 2: words[1], 3: words[1], 4: words[1] }[num] || words[2];
+        }
+    }, {
+        key: "html",
+
+
+        /**
+         * Unquoting special characters
+         */
+        value: function html() {
+            return decodeURI(this.value.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x2F;/g, "/"));
+        }
+
+        // Other filters:
+
+    }, {
+        key: "json",
+        value: function json() {
+            return JSON.stringify(this.value);
+        }
+    }, {
+        key: "exists",
+        value: function exists() {
+            return this.length() > 0;
+        }
+    }, {
+        key: "pluralform",
+        value: function pluralform(words) {
+            return this.value + " " + this.pluralword(words);
+        }
+    }, {
+        key: "startswith",
+        value: function startswith(prefix) {
+            return this.value.indexOf(prefix) == 0;
+        }
+    }, {
+        key: "endswith",
+        value: function endswith(suffix) {
+            return this.value.indexOf(suffix) == this.value.length - suffix.length;
+        }
+    }, {
+        key: "contains",
+        value: function contains(needle) {
+            return new Filters(needle).in(this.value);
+        }
+    }]);
+
+    return Filters;
+}();
+
+/**
+ * replaceAll for strings
+ */
+
+
+String.prototype.replaceAll = function (search, replacement) {
+    return this.replace(new RegExp(search, 'g'), replacement);
+};
+
+/**
+ * trimAll for strings
+ */
+String.prototype.trimAll = function (mask) {
+    var s = this;
+    while (~mask.indexOf(s[0])) {
+        s = s.slice(1);
+    }
+    while (~mask.indexOf(s[s.length - 1])) {
+        s = s.slice(0, -1);
+    }
+    return s;
+};
 
 },{}]},{},[1]);

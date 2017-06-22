@@ -1,11 +1,11 @@
 var assert = require('assert');
 
-import {Compiler,Widget} from "../src/classes/Compiler";
+import {App,Widget} from "../src/classes/App";
 
 
-describe('Compiler', () => {
+describe('App', () => {
 
-    let c = new Compiler();
+    let c = new App();
 
     it('should support "json" filter', () => {
 

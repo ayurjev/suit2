@@ -1,11 +1,11 @@
 var assert = require('assert');
 
-import {Compiler,Widget} from "../src/classes/Compiler";
+import {App,Widget} from "../src/classes/App";
 
 
-describe('Compiler', () => {
+describe('App', () => {
 
-    let c = new Compiler();
+    let c = new App();
 
     it('should compile template into class Widget', () => {
         let widget = c.compile({template: 'anything'});
@@ -17,10 +17,7 @@ describe('Compiler', () => {
             {template: 'His name is <b>{$user.name}</b> and he is {$user.age} years old'},
             {user: {name: "Andrey", age: 28}}
         );
-        assert.equal(
-            'His name is <b>Andrey</b> and he is 28 years old',
-            widget.render()
-        );
+        assert.equal('His name is <b>Andrey</b> and he is 28 years old', widget.render());
     });
 
     it('should use default value for variable if there is required variable is not present in data', () => {
@@ -28,10 +25,7 @@ describe('Compiler', () => {
             {template: 'His name is <b>{$user.name}</b> and he is {$user.age || 18} years old'},
             {user: {name: "Andrey"}}
         );
-        assert.equal(
-            'His name is <b>Andrey</b> and he is 18 years old',
-            widget.render()
-        );
+        assert.equal('His name is <b>Andrey</b> and he is 18 years old', widget.render());
     });
 
     it('should support ternary operator for variables', () => {
@@ -39,19 +33,13 @@ describe('Compiler', () => {
             {template: 'His name is <b>{$user.name}</b> and he is {$user.age < 18 ? young : old}'},
             {user: {name: "Andrey", age: 14}}
         );
-        assert.equal(
-            'His name is <b>Andrey</b> and he is young',
-            widget1.render()
-        );
+        assert.equal('His name is <b>Andrey</b> and he is young', widget1.render());
 
         let widget2 = c.compile(
             {template: 'His name is <b>{$user.name}</b> and he is {$user.age < 18 ? young : old}'},
             {user: {name: "Andrey", age: 28}}
         );
-        assert.equal(
-            'His name is <b>Andrey</b> and he is old',
-            widget2.render()
-        );
+        assert.equal('His name is <b>Andrey</b> and he is old', widget2.render());
     });
 
     it('should support ternary operator for variables (short version)', () => {
@@ -61,10 +49,7 @@ describe('Compiler', () => {
             },
             {user: {name: "Andrey", age: 14}}
         );
-        assert.equal(
-            'His name is <b>Andrey</b> and he is young',
-            widget1.render()
-        );
+        assert.equal('His name is <b>Andrey</b> and he is young', widget1.render());
 
         let widget2 = c.compile(
             {
@@ -72,10 +57,7 @@ describe('Compiler', () => {
             },
             {user: {name: "Andrey", age: 28}}
         );
-        assert.equal(
-            'His name is <b>Andrey</b> ',
-            widget2.render()
-        );
+        assert.equal('His name is <b>Andrey</b> ', widget2.render());
     });
 
     it('should support ternary operator with conjunctions', () => {
@@ -85,10 +67,7 @@ describe('Compiler', () => {
             },
             {user: {name: "Andrey", age: 14}}
         );
-        assert.equal(
-            'His name is <b>Andrey</b> and he is teenager',
-            widget1.render()
-        );
+        assert.equal('His name is <b>Andrey</b> and he is teenager', widget1.render());
 
         let widget2 = c.compile(
             {
@@ -96,10 +75,7 @@ describe('Compiler', () => {
             },
             {user: {name: "Andrey", age: 28}}
         );
-        assert.equal(
-            'His name is <b>Andrey</b> ',
-            widget2.render()
-        );
+        assert.equal('His name is <b>Andrey</b> ', widget2.render());
     });
 
     it('should support ternary operator with disjunctions', () => {
@@ -111,10 +87,7 @@ describe('Compiler', () => {
             },
             {user: {name: "Andrey", age: 14}, target: 42}
         );
-        assert.equal(
-            'His name is <b>Andrey</b> and he is not 42 years old',
-            widget1.render()
-        );
+        assert.equal('His name is <b>Andrey</b> and he is not 42 years old', widget1.render());
 
         let widget2 = c.compile(
             {
@@ -124,10 +97,7 @@ describe('Compiler', () => {
             },
             {user: {name: "Andrey", age: 42}, target: 42}
         );
-        assert.equal(
-            'His name is <b>Andrey</b> and he is 42 years old',
-            widget2.render()
-        );
+        assert.equal('His name is <b>Andrey</b> and he is 42 years old', widget2.render());
     });
 
     it('should support ternary operator with variables in true/false expressions', () => {
@@ -139,10 +109,7 @@ describe('Compiler', () => {
             },
             {user: {name: "Andrey", age: 14}, target: 42}
         );
-        assert.equal(
-            'His name is <b>Andrey</b> and he is not 42 years old',
-            widget1.render()
-        );
+        assert.equal('His name is <b>Andrey</b> and he is not 42 years old', widget1.render());
 
         let widget2 = c.compile(
             {
@@ -152,10 +119,7 @@ describe('Compiler', () => {
             },
             {user: {name: "Andrey", age: 42}, target: 42}
         );
-        assert.equal(
-            'His name is <b>Andrey</b> and he is 42 years old',
-            widget2.render()
-        );
+        assert.equal('His name is <b>Andrey</b> and he is 42 years old', widget2.render());
     });
 
     it('should support full and short syntax for if/else (multiline)', () => {
@@ -245,47 +209,38 @@ describe('Compiler', () => {
     });
 
     it('should support include syntax', () => {
-        let c = new Compiler();
+        let c = new App();
         let widget = c.compile(
             {template: `PREFIX-{include:inclusion_name}-SUFFIX`}, {user: {name: "Andrey", age: 28}}, {
                 "inclusion_name": require("../src/app/test_inclusion")
             }
         );
-        assert.equal(
-            'PREFIX-His name is <b>Andrey</b> and he is 28 years old-SUFFIX',
-            widget.render()
-        );
+        assert.equal('PREFIX-His name is <b>Andrey</b> and he is 28 years old-SUFFIX', widget.render());
     });
 
     it('should support include syntax with variables', () => {
-        let c = new Compiler();
+        let c = new App();
         let widget = c.compile(
             {template: `PREFIX-{for $d in [1,2,3] {include:digit with {"digit": $d}}-}SUFFIX`}, {}, {
                 "digit": require("../src/app/digit")
             }
         );
-        assert.equal(
-            'PREFIX-1-2-3-SUFFIX',
-            widget.render()
-        );
+        assert.equal('PREFIX-1-2-3-SUFFIX', widget.render());
     });
 
     it('should support include syntax with dynamic inclusion name', () => {
-        let c = new Compiler();
+        let c = new App();
         let widget = c.compile(
             {
                 template: `PREFIX-{for $d in [1,2,3] {include:$includeName with {"digit": $d}}-}SUFFIX`},
                 {"includeName": "digit"},
                 {"digit": require("../src/app/digit")}
         );
-        assert.equal(
-            'PREFIX-1-2-3-SUFFIX',
-            widget.render()
-        );
+        assert.equal('PREFIX-1-2-3-SUFFIX', widget.render());
     });
 
     it('should support rebuild syntax', () => {
-        let c = new Compiler();
+        let c = new App();
 
         let baseWidget = c.compile(
             {template: `{include:base_template}`}, {}, {
@@ -293,20 +248,14 @@ describe('Compiler', () => {
             }
         );
 
-        assert.equal(
-            'PREFIX-DEFAULT-CONTENT-SUFFIX-ENDING',
-            baseWidget.render()
-        );
+        assert.equal('PREFIX-DEFAULT-CONTENT-SUFFIX-ENDING', baseWidget.render());
 
         let rebasedWidget = c.compile(
             {template: `{rebuild:base_template with {"content": "REBASED-CONTENT", "blablatag": "222"}}`}, {}, {
                 "base_template": require("../src/app/base_template")
             }
         );
-        assert.equal(
-            'PREFIX-REBASED-CONTENT-SUFFIX-ENDING',
-            rebasedWidget.render()
-        );
+        assert.equal('PREFIX-REBASED-CONTENT-SUFFIX-ENDING', rebasedWidget.render());
     });
 
 

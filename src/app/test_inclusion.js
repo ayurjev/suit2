@@ -16,6 +16,4 @@ export let init = function(internal) {
     internal.api.get_state = function() {
         return internal.state;
     }
-
-
 };

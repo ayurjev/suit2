@@ -1,10 +1,10 @@
 
-import {Compiler,Widget} from "../classes/Compiler";
+import {App} from "../classes/App";
 
-window.router = {
+new App({
     "/": require("./widgets/Main"),
     "/page1/": require("./test_inclusion"),
     "/page1/subpage/": require("./subpage")
-};
-
-window.config = {user: {name: "Andrey", age: 28}};
+},
+    {user: {name: "Andrey", age: 28}}
+)

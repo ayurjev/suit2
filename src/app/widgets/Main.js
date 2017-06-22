@@ -13,11 +13,8 @@ export let init = function(internal) {
     };
 
     internal.api.createListeners = function() {
-
         internal.subscribe("TEST_INCLUSION_INITED", (e) => { console.dir(e); internal.say("GLOBAL"); });
-
         internal.subscribe("TEST_INCLUSION_INITED", (e) => { console.dir(e); internal.say("EXCLUSIVE"); }, internal.includes.test_inclusion);
-
         internal.broadcast("TEST_INCLUSION_INITED", {"local": 55});
     };
 
