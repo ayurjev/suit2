@@ -270,6 +270,20 @@ describe('Compiler', () => {
         );
     });
 
+    it('should support include syntax with dynamic inclusion name', () => {
+        let c = new Compiler();
+        let widget = c.compile(
+            {
+                template: `PREFIX-{for $d in [1,2,3] {include:$includeName with {"digit": $d}}-}SUFFIX`},
+                {"includeName": "digit"}, 
+                {"digit": require("../src/app/digit")}
+        );
+        assert.equal(
+            'PREFIX-1-2-3-SUFFIX',
+            widget.render()
+        );
+    });
+
     it('should support rebuild syntax', () => {
         let c = new Compiler();
 

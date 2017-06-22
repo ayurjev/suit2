@@ -352,6 +352,8 @@ export class Widget {
 
         expression = expression.replace("include:", "").trim();
 
+        if (expression.indexOf("$") == 0) expression = this.extract(expression);
+
         var t = this.internal.includes[expression];
 
         if (t.uid instanceof Function || t instanceof Array) {
