@@ -94,13 +94,39 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+try {
+
+    String.prototype.replaceAll = function (search, replacement) {
+        return this.replace(new RegExp(search, 'g'), replacement);
+    };
+
+    String.prototype.trimAll = function (mask) {
+        var s = this;
+        while (~mask.indexOf(s[0])) {
+            s = s.slice(1);
+        }
+        while (~mask.indexOf(s[s.length - 1])) {
+            s = s.slice(0, -1);
+        }
+        return s;
+    };
+
+    Element.prototype.find_parent = function (css) {
+        var parent = this.parentElement;
+        while (parent) {
+            if (parent.matches(css)) return parent;else parent = parent.parentElement;
+        }
+        return null;
+    };
+} catch (e) {}
 
 var Filter = function () {
     function Filter(value) {
@@ -113,7 +139,7 @@ var Filter = function () {
         key: "length",
         value: function length() {
             if (!this.value) return 0;
-            if (_typeof(this.value) == "object" && !(this.value instanceof Array)) {
+            if (this.value instanceof Object) {
                 var counter = 0;
                 for (var k in this.value) {
                     counter++;
@@ -123,32 +149,14 @@ var Filter = function () {
             return this.value.length;
         }
     }, {
-        key: "exists",
-        value: function exists() {
-            return this.length() > 0;
-        }
-    }, {
-        key: "startswith",
-        value: function startswith(prefix) {
-            return this.value.indexOf(prefix) == 0;
-        }
-    }, {
-        key: "endswith",
-        value: function endswith(suffix) {
-            return this.value.indexOf(suffix) == this.value.length - suffix.length;
-        }
-    }, {
         key: "format",
         value: function format(format_str) {
-            var date_obj;
-            if (this.value instanceof Date) date_obj = this.value;else date_obj = new Date(this.value);
-
+            var date_obj = this.value instanceof Date ? this.value : new Date(this.value);
             if (Object.prototype.toString.call(date_obj) != "[object Date]" || isNaN(date_obj.getTime())) {
                 return date;
             }
             var pad = function pad(val) {
-                val = String(val);
-                return val.length == 1 ? "0" + val : val;
+                return String(val).length == 1 ? "0" + val : val;
             };
             format_str = format_str.replace("%d", pad(date_obj.getDate()));
             format_str = format_str.replace("%m", pad(date_obj.getMonth() + 1));
@@ -163,57 +171,32 @@ var Filter = function () {
         key: "in",
         value: function _in(haystack) {
             var needle = this.value;
-            if (typeof haystack == "string") {
-                try {
-                    haystack = JSON.parse(haystack);
-                } catch (e) {}
-            }
             if (needle == null || haystack == null) {
                 return false;
             }
             if (typeof haystack == "string") {
-                return !!(haystack.indexOf(needle) > -1);
-            } else if (haystack instanceof Array) {
-                for (var i in haystack) {
-                    if (haystack[i] == needle) {
-                        return true;
-                    }
+                try {
+                    haystack = JSON.parse(haystack);
+                } catch (e) {
+                    return !!(haystack.indexOf(needle) > -1);
                 }
-                return false;
-            } else if (haystack instanceof Object) {
-                return needle in haystack;
-            } else {
-                return false;
             }
-        }
-    }, {
-        key: "contains",
-        value: function contains(needle) {
-            return new Filter(needle).in(this.value);
+            if (haystack instanceof Array) {
+                return haystack.indexOf(needle) > -1;
+            }
+            if (haystack instanceof Object) {
+                return needle in haystack;
+            }
         }
     }, {
         key: "pluralword",
         value: function pluralword(words) {
-            var initial_num = this.value;
             if (typeof words == "string") words = JSON.parse(words);
-            var num = parseInt(initial_num) % 100;
-            var word;
+            var num = parseInt(this.value) % 100;
             if (num > 19) {
                 num = num % 10;
             }
-            if (num == 1) {
-                word = words[0];
-            } else if (num == 2 || num == 3 || num == 4) {
-                word = words[1];
-            } else {
-                word = words[2];
-            }
-            return word;
-        }
-    }, {
-        key: "pluralform",
-        value: function pluralform(words) {
-            return this.value + " " + this.pluralword(words);
+            return { 1: words[0], 2: words[1], 3: words[1], 4: words[1] }[num] || words[2];
         }
     }, {
         key: "html",
@@ -224,6 +207,31 @@ var Filter = function () {
         key: "json",
         value: function json() {
             return JSON.stringify(this.value);
+        }
+    }, {
+        key: "exists",
+        value: function exists() {
+            return this.length() > 0;
+        }
+    }, {
+        key: "pluralform",
+        value: function pluralform(words) {
+            return this.value + " " + this.pluralword(words);
+        }
+    }, {
+        key: "startswith",
+        value: function startswith(prefix) {
+            return this.value.indexOf(prefix) == 0;
+        }
+    }, {
+        key: "endswith",
+        value: function endswith(suffix) {
+            return this.value.indexOf(suffix) == this.value.length - suffix.length;
+        }
+    }, {
+        key: "contains",
+        value: function contains(needle) {
+            return new Filter(needle).in(this.value);
         }
     }]);
 
@@ -239,26 +247,10 @@ var Widget = exports.Widget = function () {
         this.compiler = compiler;
         this.cb = cb;
         this.internal = internal;
-        this.internal.api._render = this.render;
 
         this.internal.refresh = function () {
             try {
-                /**
-                 *  find_parent polyfill
-                 */
-                (function (e) {
-                    e.find_parent = function (css) {
-                        var parent = this.parentElement;
-
-                        while (parent) {
-                            if (parent.matches(css)) return parent;else parent = parent.parentElement;
-                        }
-                        return null;
-                    };
-                })(Element.prototype);
-
                 var widget = document.getElementById(_this.internal.uid);
-
                 var target = widget;
                 if (_this.compiler.config.refresh_up && _this.compiler.config.state == "shared") {
                     do {
@@ -268,17 +260,14 @@ var Widget = exports.Widget = function () {
                 }
 
                 target.outerHTML = _this.compiler.instances[target.getAttribute("id")].render();
-            } catch (ReferenceError) {
-                // it's ok... no document object... tests...
-            }
+            } catch (e) {}
         };
 
-        this.internal.subscribe = function (eventName, cb, origin) {
-            _this.compiler.subscribe(eventName, cb, origin);
+        this.internal.subscribe = function (eName, cb, origin) {
+            _this.compiler.subscribe(eName, cb, origin);
         };
-
-        this.internal.broadcast = function (eventName, message) {
-            _this.compiler.broadcast(eventName, message, _this.internal.api);
+        this.internal.broadcast = function (eName, message) {
+            _this.compiler.broadcast(eName, message, _this.internal.api);
         };
     }
 
@@ -291,74 +280,70 @@ var Widget = exports.Widget = function () {
         key: "render",
         value: function render(state) {
             this.internal.state = state || this.internal.state;
-            var result = this.cb();
-            return result.replace(/\s\s+/mig, " ");
+            return this.cb().replace(/\s\s+/mig, " ");
         }
     }, {
         key: "exp",
         value: function exp(source, additional_scope, iternum) {
             var _this2 = this;
 
-            if (source === undefined) return "";
-            source = source.trim();
+            try {
+                source = source.trim();
+            } catch (TypeError) {
+                return "";
+            }
 
             if (/\((.+?)\)/mig.test(source)) {
                 source = source.replace(/\((.+?)\)/mig, function (m, s) {
-                    if (s.indexOf('"') == 0 || s.indexOf("'") == 0) {
-                        return "(" + s + ")";
-                    }
                     return "(" + _this2.exp(s, additional_scope, iternum) + ")";
                 });
             }
 
             if (/for (.+?) in (.+?)\s(.+?)/mig.test(source)) return this.list(source, additional_scope, iternum);
-            if (/include:(.+?) with\s(.+?)/mig.test(source)) return this.include_with(source, additional_scope, iternum);
-            if (/include:(.+?)/mig.test(source)) return this.include(source, additional_scope, iternum);
-
-            if (/rebuild:(.+?) with\s(.+?)/mig.test(source)) return this.rebuild(source, additional_scope, iternum);
-
-            if (/(.+?)\?(.+?)\: (.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
+            if (/include:(.+?)/mig.test(source)) return this.include_with(source, additional_scope, iternum);
+            if (/rebuild:(.+?)/mig.test(source)) return this.rebuild(source, additional_scope, iternum);
             if (/(.+?)\?(.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
 
-            if (/(.+?)&&(.+?)/mig.test(source)) return this.cmp(source, "&&", additional_scope, iternum);
-            if (/(.+?)\|\|(.+?)/mig.test(source)) return this.cmp(source, "||", additional_scope, iternum);
-            if (/(.+?)==(.+?)/mig.test(source)) return this.cmp(source, "==", additional_scope, iternum);
-            if (/(.+?)==(.+?)/mig.test(source)) return this.cmp(source, "!=", additional_scope, iternum);
-            if (/(.+?) < (.+?)/mig.test(source)) return this.cmp(source, "<", additional_scope, iternum);
-            if (/(.+?) > (.+?)/mig.test(source)) return this.cmp(source, ">", additional_scope, iternum);
-            if (/(.+?)<=(.+?)/mig.test(source)) return this.cmp(source, "<=", additional_scope, iternum);
-            if (/(.+?)>=(.+?)/mig.test(source)) return this.cmp(source, ">=", additional_scope, iternum);
+            var seps = ["&&", "||", "==", "!=", " < ", " > ", ">=", "<="];
+            for (var i = 0; i < seps.length; i++) {
+                if (source.indexOf(seps[i]) > -1) {
+                    var _source$split = source.split(seps[i]),
+                        _source$split2 = _slicedToArray(_source$split, 2),
+                        l = _source$split2[0],
+                        r = _source$split2[1];
+
+                    return this.cmp2(l, r, seps[i], additional_scope, iternum);
+                }
+            }
 
             if (source.indexOf("[") == 0 || source.indexOf("{") == 0) return source;
-
             return this.var(source, additional_scope, iternum);
         }
     }, {
         key: "var",
         value: function _var(source, additional_scope, iternum) {
             var that = this;
-
+            var result = null;
             if (source.indexOf("$") > -1) {
                 source = source.replace(/\$[A-Za-zА-Яа-я0-9_.]+(\|+(.+?)[\)\s])*/mig, function (m, s) {
-                    var extracted_value = that.extract(m, additional_scope, iternum);
-                    if (extracted_value instanceof Array) extracted_value = JSON.stringify(extracted_value);
-                    return extracted_value;
+                    return that.extract(m, additional_scope, iternum);
                 });
             }
 
-            var result = null;
             try {
                 result = eval(source);
-            } catch (Exception) {
+            } catch (e) {
                 result = source;
             }
-
             return result;
         }
     }, {
         key: "extract",
         value: function extract(path, additional_scope, iternum) {
+            var value = null;
             var filter = null;
+            var data = Object.assign({}, this.internal.state, additional_scope);
+
             if (path.indexOf("$") == 0 && path.indexOf("|") > -1) {
                 ;
 
@@ -370,43 +355,34 @@ var Widget = exports.Widget = function () {
                 filter = _path$split2[1];
             }if (iternum && path == "$i") return iternum();
 
-            path = path.replace("$$", "").replace("$", "").trim().split(".");
-            var data = this.internal.state;
-            var value = null;
+            path = path.replace("$", "").trim().split(".");
             var path_part = path.shift();
 
             while (path_part) {
-                if (additional_scope && path_part in additional_scope) {
-                    value = additional_scope[path_part];
-                    additional_scope = additional_scope[path_part];
-                    path_part = path.shift();
-                } else if (path_part in data) {
+                if (path_part in data) {
                     value = data[path_part];
                     data = data[path_part];
                     path_part = path.shift();
                 } else {
-                    path_part = null;
                     value = null;
+                    path_part = null;
                 }
             }
 
             value = this.escape(value);
 
             if (filter) {
-                var params;
-                if (filter.indexOf(")") != filter.length - 1) filter = filter + "()";else {
-                    var _filter$match = filter.match(/(.+?)\((.*?)\)$/);
+                var _filter$match = filter.match(/(?:.+?)\((.*?)\)$/),
+                    _filter$match2 = _slicedToArray(_filter$match, 2),
+                    params = _filter$match2[1];
 
-                    var _filter$match2 = _slicedToArray(_filter$match, 3);
-
-                    params = _filter$match2[2];
-
-                    if (params.length && params.indexOf('"') != 0 && params.indexOf("'") != 0 && params.indexOf('[') != 0 && params.indexOf('{') != 0) {
-                        filter = filter.replace(params, '"' + params + '"');
-                    }
+                if (params.length && params.indexOf('"') != 0 && params.indexOf("'") != 0 && params.indexOf('[') != 0 && params.indexOf('{') != 0) {
+                    filter = filter.replace(params, '"' + params + '"');
                 }
+
                 value = eval("(new Filter(value))." + filter);
             }
+
             return value;
         }
     }, {
@@ -421,40 +397,34 @@ var Widget = exports.Widget = function () {
             return obj;
         }
     }, {
-        key: "cmp",
-        value: function cmp(var_name, sep, additional_scope, iternum) {
-            var _var_name$split = var_name.split(sep),
-                _var_name$split2 = _slicedToArray(_var_name$split, 2),
-                v1 = _var_name$split2[0],
-                v2 = _var_name$split2[1];
-
-            if (sep == "||") {
+        key: "cmp2",
+        value: function cmp2(v1, v2, sep, additional_scope, iternum) {
+            v1 = this.exp(v1, additional_scope, iternum);
+            v2 = this.exp(v2, additional_scope, iternum);
+            try {
+                return eval(v1 + sep + v2);
+            } catch (ReferenceError) {
                 try {
-                    return eval(this.exp(v1, additional_scope, iternum) + sep + this.exp(v2, additional_scope, iternum));
+                    return eval(v1 + sep + '`' + v2 + '`');
                 } catch (ReferenceError) {
                     try {
-                        return eval(this.exp(v1, additional_scope, iternum) + sep + '`' + this.exp(v2, additional_scope, iternum) + '`');
+                        return eval('`' + v1 + '`' + sep + v2);
                     } catch (ReferenceError) {
-                        try {
-                            return eval('`' + this.exp(v1, additional_scope, iternum) + '`' + sep + this.exp(v2, additional_scope, iternum));
-                        } catch (ReferenceError) {
-                            return eval('`' + this.exp(v1, additional_scope, iternum) + '`' + sep + '`' + this.exp(v2, additional_scope, iternum) + '`');
-                        }
+                        return eval('`' + v1 + '`' + sep + '`' + v2 + '`');
                     }
                 }
             }
-            return eval(this.exp(v1, additional_scope, iternum) + sep + this.exp(v2, additional_scope, iternum));
         }
     }, {
         key: "ternary",
         value: function ternary(var_name, additional_scope, iternum) {
             var_name = var_name.replace(":", "?");
 
-            var _var_name$split3 = var_name.split("?"),
-                _var_name$split4 = _slicedToArray(_var_name$split3, 3),
-                path = _var_name$split4[0],
-                positive = _var_name$split4[1],
-                negative = _var_name$split4[2];
+            var _var_name$split = var_name.split("?"),
+                _var_name$split2 = _slicedToArray(_var_name$split, 3),
+                path = _var_name$split2[0],
+                positive = _var_name$split2[1],
+                negative = _var_name$split2[2];
 
             return this.exp(path, additional_scope, iternum) ? this.exp(positive, additional_scope, iternum) : this.exp(negative, additional_scope, iternum);
         }
@@ -483,12 +453,11 @@ var Widget = exports.Widget = function () {
                 });
             });
 
-            itertemplate_compiled = "((widget, scope, iternum) => { return `" + itertemplate_compiled + "`; })";
-            itertemplate_compiled = eval(itertemplate_compiled);
+            itertemplate_compiled = eval("((widget, scope, iternum) => { return `" + itertemplate_compiled + "`; })");
 
             var i = 0;
             iterable.forEach(function (itervalue, num) {
-                var local_scope = Object.assign(additional_scope || {});
+                var local_scope = additional_scope || {};
                 local_scope[iterkey] = itervalue;
                 out += itertemplate_compiled(that, local_scope, function () {
                     i++;return i;
@@ -502,6 +471,8 @@ var Widget = exports.Widget = function () {
         value: function include(expression, additional_scope, iternum) {
 
             expression = expression.replace("include:", "").trim();
+
+            if (expression.indexOf("$") == 0) expression = this.extract(expression);
 
             var t = this.internal.includes[expression];
 
@@ -528,19 +499,28 @@ var Widget = exports.Widget = function () {
             return widget.render();
         }
     }, {
-        key: "include_with",
-        value: function include_with(expression, additional_scope, iternum) {
-            var _expression$match3 = expression.match(/include:(.+?) with\s(.+?)$/),
-                _expression$match4 = _slicedToArray(_expression$match3, 3),
-                template = _expression$match4[1],
-                data = _expression$match4[2];
-
+        key: "scope",
+        value: function scope(data, additional_scope, iternum) {
             if (data.indexOf("[") == 0 || data.indexOf("{") == 0) {
                 data = this.var(data, additional_scope, iternum);
                 data = JSON.parse(data);
             } else data = this.extract(data);
 
-            return this.include(template, Object.assign({}, this.compiler.deepclone(this.internal.state), data), iternum);
+            return Object.assign({}, this.compiler.deepclone(this.internal.state), data);
+        }
+    }, {
+        key: "include_with",
+        value: function include_with(expression, additional_scope, iternum) {
+            if (expression.indexOf("with") > -1) {
+                var _expression$match3 = expression.match(/include:(.+?) with\s(.+?)$/),
+                    _expression$match4 = _slicedToArray(_expression$match3, 3),
+                    template = _expression$match4[1],
+                    data = _expression$match4[2];
+
+                additional_scope = this.scope(data, additional_scope, iternum);
+                expression = template;
+            }
+            return this.include(expression, additional_scope, iternum);
         }
     }, {
         key: "rebuild",
@@ -550,16 +530,73 @@ var Widget = exports.Widget = function () {
                 template = _expression$match6[1],
                 data = _expression$match6[2];
 
-            if (data.indexOf("[") == 0 || data.indexOf("{") == 0) {
-                data = this.var(data, additional_scope, iternum);
-                data = JSON.parse(data);
-            } else data = this.extract(data);
-
-            return this.include(template, Object.assign({}, this.compiler.deepclone(this.internal.state), data), iternum);
+            return this.include(template, this.scope(data, additional_scope, iternum), iternum);
         }
     }]);
 
     return Widget;
+}();
+
+var ControllerFactory = function () {
+    function ControllerFactory(router) {
+        _classCallCheck(this, ControllerFactory);
+
+        this.router = {};
+        for (var routePattern in router) {
+            this.router[routePattern.trimAll("/")] = router[routePattern];
+        };
+    }
+
+    _createClass(ControllerFactory, [{
+        key: "extractParameters",
+        value: function extractParameters(url, routePattern) {
+            var result = {};
+            var names = routePattern.trimAll("/").split("/");
+            var values = url.trimAll("/").split("/");
+
+            for (var i = 0; i < names.length; i++) {
+                var name = names[i];
+                if (new RegExp("<.+?>").test(name)) {
+                    var trimmedName = name.replaceAll("<", "").replaceAll(">", "");
+                    result[trimmedName] = values[i];
+                }
+            }
+            return result;
+        }
+    }, {
+        key: "get",
+        value: function get(url) {
+            url = url.trimAll("/");
+
+            var fast_acs_controller = this.router[url];
+            if (fast_acs_controller != null) return { "controller": fast_acs_controller, "request": {} };
+
+            var best_controller = null;
+            var best_controller_request = {};
+            var best_controller_placeholders = 1000;
+            for (var routePattern in this.router) {
+                if (this.isMatch(url, routePattern)) {
+                    var phCount = routePattern.match(/<(.+?)>/g).length;
+                    if (phCount < best_controller_placeholders) {
+                        best_controller = this.router[routePattern];
+                        best_controller_request = this.extractParameters(url, routePattern);
+                        best_controller_placeholders = phCount;
+                        if (phCount == 1) break;
+                    }
+                }
+            };
+            if (best_controller) return { "controller": best_controller, "request": best_controller_request };
+            throw new Error("404 NotFound");
+        }
+    }, {
+        key: "isMatch",
+        value: function isMatch(url, routePattern) {
+            routePattern = "^" + routePattern + "$";
+            return new RegExp(routePattern.trimAll("/").replaceAll("(<(.+?)>)", "(.+?)")).test(url.trimAll("/"));
+        }
+    }]);
+
+    return ControllerFactory;
 }();
 
 var Compiler = exports.Compiler = function () {
@@ -572,6 +609,8 @@ var Compiler = exports.Compiler = function () {
         this.subscriptions = {};
         this.uids_cache = {};
         this.router.strategy = this.router.strategy || new HashStrategy();
+
+        this.controllerFactory = new ControllerFactory(this.router);
 
         this.initDomListeners();
     }
@@ -597,9 +636,7 @@ var Compiler = exports.Compiler = function () {
     }, {
         key: "deepclone",
         value: function deepclone(source) {
-
             if (this.config.state == "shared") return source;
-
             var destination = {};
             for (var property in source) {
                 if (_typeof(source[property]) === "object" && source[property] !== null) {
@@ -662,44 +699,21 @@ var Compiler = exports.Compiler = function () {
             }
         }
     }, {
-        key: "build_internal",
-        value: function build_internal(_uid, state, includes, t) {
-            return {
-                uid: _uid,
-                api: { createListeners: function createListeners() {}, uid: function uid() {
-                        return _uid;
-                    } },
-                state: state,
-                includes: includes
-            };
-        }
-    }, {
         key: "compile",
         value: function compile(t, state, includes) {
+
             var uid = this.generateUID2(t);
-
-            var prev_state = {};
-            if (this.instances[uid]) {
-                prev_state = this.instances[uid].internal.state;
-            }
-
-            state = state || {};
-            includes = includes || {};
-            var internal = this.build_internal(uid, Object.assign(prev_state, state), includes, t);
+            var prev_state = this.instances[uid] ? this.instances[uid].internal.state : {};
+            var internal = new Internal(uid, Object.assign(prev_state, state), includes);
 
             if (t.init) t.init(internal);
 
             var template;
-
             try {
-                // if there is a window object:
                 if (window) {
-                    this.instances[uid] = internal.api;
                     template = '<widget id="' + uid + '">' + t.template + '</widget>';
                 }
-            }
-            // no window object:
-            catch (Exception) {
+            } catch (ReferenceError) {
                 template = t.template;
             }
 
@@ -710,17 +724,16 @@ var Compiler = exports.Compiler = function () {
                 });
             });
 
-            var widget = new Widget(function () {
+            this.instances[uid] = new Widget(function () {
                 return eval('() => { return `' + template + '`}')();
             }, internal, this);
 
-            try {
-                this.instances[uid] = widget;
-            }
-            // no window object:
-            catch (Exception) {}
-
-            return widget;
+            return this.instances[uid];
+        }
+    }, {
+        key: "compileTarget",
+        value: function compileTarget(target) {
+            return this.compile(target.controller, Object.assign({}, this.config, { "request": target.request }));
         }
     }, {
         key: "load",
@@ -729,22 +742,22 @@ var Compiler = exports.Compiler = function () {
 
             this.clear();
 
-            // get loadTarget:
-            url = url || this.router.strategy.getCurrentLocation();
-            var loadTarget = this.router[url];
+            var loadTarget = this.getLoadTarget();
 
             if (loadTarget) {
+                document.body.innerHTML = this.compileTarget(loadTarget).render();
 
-                // compile baseWidget:
-                document.body.innerHTML = this.compile(loadTarget, this.config).render();
-
-                // initialize all <widget>'s:
                 var widgets = [].slice.call(document.getElementsByTagName("widget"));
                 widgets.forEach(function (widget) {
                     var api = _this4.instances[widget.getAttribute("id")].api();
                     api.createListeners();
                 });
             }
+        }
+    }, {
+        key: "getLoadTarget",
+        value: function getLoadTarget(url) {
+            return this.controllerFactory.get(url || this.router.strategy.getCurrentLocation());
         }
     }, {
         key: "clear",
@@ -778,6 +791,22 @@ var Compiler = exports.Compiler = function () {
     return Compiler;
 }();
 
+var Internal = function Internal(uid, state, includes) {
+    var _this5 = this;
+
+    _classCallCheck(this, Internal);
+
+    this.uid = uid;
+    this.api = {
+        createListeners: function createListeners() {},
+        uid: function uid() {
+            return _this5.uid;
+        }
+    };
+    this.state = state || {};
+    this.includes = includes || {};
+};
+
 var HashStrategy = exports.HashStrategy = function () {
     function HashStrategy() {
         _classCallCheck(this, HashStrategy);
@@ -786,9 +815,7 @@ var HashStrategy = exports.HashStrategy = function () {
     _createClass(HashStrategy, [{
         key: "getCurrentLocation",
         value: function getCurrentLocation() {
-            var url = location.hash || "/";
-            url = url.replace("#", "");
-            return url;
+            return (location.hash || "/").replace("#", "");
         }
     }, {
         key: "onClick",
@@ -803,13 +830,15 @@ var HashStrategy = exports.HashStrategy = function () {
 }();
 
 try {
+
     var domReady = function domReady(callback) {
         document.readyState === "interactive" || document.readyState === "complete" ? callback() : document.addEventListener("DOMContentLoaded", callback);
     };
 
     domReady(function () {
-        new Compiler(window.router, window.config).load();
+        window.compiler = new Compiler(window.router, window.config);
+        window.compiler.load();
     });
-} catch (Exception) {}
+} catch (e) {}
 
 },{}]},{},[1]);

@@ -165,14 +165,15 @@ export class Widget {
     }
 
     extract(path, additional_scope, iternum) {
+        var value = null;
         var filter = null;
+        var data = Object.assign({}, this.internal.state, additional_scope);
+
         if (path.indexOf("$") == 0 && path.indexOf("|") > -1) [path, filter] = path.split("|");
 
         if (iternum && path == "$i") return iternum();
 
         path = path.replace("$", "").trim().split(".");
-        var data = Object.assign({}, this.internal.state, additional_scope);
-        var value = null;
         var path_part = path.shift();
 
         while (path_part) {
@@ -182,20 +183,26 @@ export class Widget {
                 path_part = path.shift();
             }
             else {
-                path_part = null;
                 value = null;
+                path_part = null;
             }
         }
 
         value = this.escape(value);
 
         if (filter) {
-            let [,,params] = filter.match(/(.+?)\((.*?)\)$/);
-            if (params.length && params.indexOf('"') != 0 && params.indexOf("'") != 0 && params.indexOf('[') != 0 && params.indexOf('{') != 0) {
+            let [,params] = filter.match(/(?:.+?)\((.*?)\)$/);
+            if (
+                params.length &&
+                params.indexOf('"') != 0 && params.indexOf("'") != 0 &&
+                params.indexOf('[') != 0 && params.indexOf('{') != 0
+            ) {
                 filter = filter.replace(params, '"' + params + '"');
             }
+
             value = eval("(new Filter(value))." + filter);
         }
+
         return value;
     }
 
@@ -249,12 +256,11 @@ export class Widget {
             });
         });
 
-        itertemplate_compiled = `((widget, scope, iternum) => { return \`` + itertemplate_compiled + `\`; })`;
-        itertemplate_compiled = eval(itertemplate_compiled);
+        itertemplate_compiled = eval(`((widget, scope, iternum) => { return \`` + itertemplate_compiled + `\`; })`);
 
         var i = 0;
         iterable.forEach(function(itervalue, num) {
-            var local_scope = Object.assign(additional_scope || {});
+            var local_scope = additional_scope || {};
             local_scope[iterkey] = itervalue;
             out += itertemplate_compiled(that, local_scope, function() { i++; return i; });
         });
@@ -276,7 +282,9 @@ export class Widget {
 
         if (!t) { require(expression); }
 
-        var widget = this.compiler.compile(t, Object.assign({},  this.compiler.deepclone(this.internal.state), additional_scope));
+        var widget = this.compiler.compile(
+            t, Object.assign({},  this.compiler.deepclone(this.internal.state), additional_scope)
+        );
 
         if (t.uid instanceof Function) {
             this.internal.includes[expression] = [t, widget.api()];
@@ -457,37 +465,17 @@ export class Compiler {
         }
     }
 
-    build_internal(uid, state, includes, t) {
-        return {
-            uid: uid,
-            api: {createListeners: ()=>{}, uid: () => { return uid; }},
-            state: state,
-            includes: includes
-        };
-    }
-
     compile(t, state, includes) {
+
         var uid = this.generateUID2(t);
         var prev_state = this.instances[uid] ? this.instances[uid].internal.state : {};
-
-        state = state || {};
-        includes = includes || {};
-
-        var internal = this.build_internal(uid, Object.assign(prev_state, state), includes, t);
+        var internal = new Internal(uid, Object.assign(prev_state, state), includes);
 
         if (t.init) t.init(internal);
 
         var template;
-
-        try {
-            // if there is a window object:
-            if (window) {
-                this.instances[uid] = internal.api;
-                template = '<widget id="' + uid + '">'+t.template+'</widget>';
-            }
-        }
-        // no window object:
-        catch (ReferenceError) { template = t.template; }
+        try                     { if (window) { template = '<widget id="' + uid + '">'+t.template+'</widget>'; }}
+        catch (ReferenceError)  { template = t.template; }
 
         template = template.replace(/\s\s+/mig, " ").trim();
         template = this.chunks(template, (to_compile) => {
@@ -496,11 +484,9 @@ export class Compiler {
             });
         });
 
-        var widget = new Widget(() => { return eval('() => { return `' + template + '`}')(); }, internal, this);
+        this.instances[uid] = new Widget(() => { return eval('() => { return `' + template + '`}')(); }, internal, this);
 
-        this.instances[uid] = widget;
-
-        return widget;
+        return this.instances[uid];
     }
 
     compileTarget(target) {
@@ -508,14 +494,12 @@ export class Compiler {
     }
 
     load(url) {
-
         this.clear();
 
         let loadTarget = this.getLoadTarget();
 
         if (loadTarget) {
-
-            document.body.innerHTML = this.compileTarget(target).render();
+            document.body.innerHTML = this.compileTarget(loadTarget).render();
 
             var widgets = [].slice.call(document.getElementsByTagName("widget"));
             widgets.forEach((widget) => {
@@ -556,6 +540,18 @@ export class Compiler {
 
 }
 
+class Internal {
+    constructor(uid, state, includes) {
+        this.uid = uid;
+        this.api = {
+            createListeners: () => {},
+            uid: () => { return this.uid; }
+        };
+        this.state = state || {};
+        this.includes = includes || {};
+    }
+}
+
 
 export class HashStrategy {
     getCurrentLocation() {
@@ -569,11 +565,16 @@ export class HashStrategy {
 }
 
 try {
+
     var domReady = function(callback) {
         document.readyState === "interactive" || document.readyState === "complete"
         ? callback()
         : document.addEventListener("DOMContentLoaded", callback);
     };
 
-    domReady(() => { (new Compiler(window.router, window.config)).load() });
+    domReady(() => {
+        window.compiler = new Compiler(window.router, window.config);
+        window.compiler.load();
+     });
+
 } catch (e) {}
