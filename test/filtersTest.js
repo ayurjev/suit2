@@ -70,7 +70,7 @@ describe('Compiler', () => {
             {
                 template: `
                     His name is <b>{$user.name}</b>
-                    {$user.name|length != 6
+                    {$user.name|length() != 6
                         ? and length of his name does not equal 6
                         : and length of his name equals 6!
                     }

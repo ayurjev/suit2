@@ -81,7 +81,7 @@ describe('Compiler', () => {
     it('should support ternary operator with conjunctions', () => {
         let widget1 = c.compile(
             {
-                template: 'His name is <b>{$user.name}</b> {($user.age < 18 && $user.age > 10) ? and he is teenager}'
+                template: 'His name is <b>{$user.name}</b> {($user.age < 18) && ($user.age > 10) ? and he is teenager}'
             },
             {user: {name: "Andrey", age: 14}}
         );
@@ -92,7 +92,7 @@ describe('Compiler', () => {
 
         let widget2 = c.compile(
             {
-                template: 'His name is <b>{$user.name}</b> {($user.age < 18 && $user.age > 10) ? and he is teenager}'
+                template: 'His name is <b>{$user.name}</b> {($user.age < 18) && ($user.age > 10) ? and he is teenager}'
             },
             {user: {name: "Andrey", age: 28}}
         );
@@ -275,7 +275,7 @@ describe('Compiler', () => {
         let widget = c.compile(
             {
                 template: `PREFIX-{for $d in [1,2,3] {include:$includeName with {"digit": $d}}-}SUFFIX`},
-                {"includeName": "digit"}, 
+                {"includeName": "digit"},
                 {"digit": require("../src/app/digit")}
         );
         assert.equal(

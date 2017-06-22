@@ -1,23 +1,34 @@
+try {
 
-String.prototype.replaceAll = function(search, replacement) {
-    return this.replace(new RegExp(search, 'g'), replacement);
-};
+    String.prototype.replaceAll = function(search, replacement) {
+        return this.replace(new RegExp(search, 'g'), replacement);
+    };
 
-String.prototype.trimAll = function(mask) {
-    var s = this;
-    while (~mask.indexOf(s[0])) { s = s.slice(1); }
-    while (~mask.indexOf(s[s.length - 1])) { s = s.slice(0, -1); }
-    return s;
-}
+    String.prototype.trimAll = function(mask) {
+        var s = this;
+        while (~mask.indexOf(s[0])) { s = s.slice(1); }
+        while (~mask.indexOf(s[s.length - 1])) { s = s.slice(0, -1); }
+        return s;
+    };
+
+    Element.prototype.find_parent = function(css) {
+        var parent = this.parentElement;
+        while (parent) {
+            if (parent.matches(css)) return parent;
+            else parent = parent.parentElement;
+        }
+        return null;
+    };
+
+} catch (e) {}
+
 
 class Filter {
-    constructor(value) {
-        this.value = value;
-    }
+    constructor(value) { this.value = value; }
 
     length() {
         if (!this.value) return 0;
-        if (typeof(this.value) == "object" && !(this.value instanceof Array)) {
+        if (this.value instanceof Object) {
             var counter = 0;
             for (var k in this.value) counter++;
             return counter;
@@ -26,30 +37,10 @@ class Filter {
         return this.value.length;
     }
 
-    exists() {
-        return this.length() > 0;
-    }
-
-    startswith(prefix) {
-        return this.value.indexOf(prefix) == 0;
-    }
-
-    endswith(suffix) {
-        return this.value.indexOf(suffix) == this.value.length - suffix.length;
-    }
-
     format(format_str) {
-        var date_obj;
-        if (this.value instanceof Date) date_obj = this.value;
-        else date_obj = new Date(this.value);
-
-        if (Object.prototype.toString.call(date_obj) != "[object Date]" || isNaN(date_obj.getTime())) {
-            return date;
-        }
-        var pad = function (val) {
-            val = String(val);
-            return val.length == 1 ? "0" + val : val;
-        };
+        var date_obj = this.value instanceof Date ? this.value : new Date(this.value);
+        if (Object.prototype.toString.call(date_obj) != "[object Date]" || isNaN(date_obj.getTime())) { return date; }
+        var pad = (val) => { return String(val).length == 1 ? "0" + val : val; };
         format_str = format_str.replace("%d", pad(date_obj.getDate()));
         format_str = format_str.replace("%m", pad(date_obj.getMonth() + 1));
         format_str = format_str.replace("%y", String(date_obj.getFullYear())[2] + String(date_obj.getFullYear())[3]);
@@ -62,57 +53,38 @@ class Filter {
 
     in(haystack) {
         var needle = this.value;
-        if (typeof(haystack) == "string") {
-            try {
-                haystack = JSON.parse(haystack);
-            } catch (e) {}
+        if (needle == null || haystack == null) { return false; }
+        if (typeof(haystack) == "string")
+        {
+            try                                 { haystack = JSON.parse(haystack); }
+            catch (e)                           { return !!(haystack.indexOf(needle) > -1); }
         }
-        if (needle == null || haystack == null) { return false }
-        if (typeof(haystack) == "string"){ return !!(haystack.indexOf(needle) > -1); }
-        else if (haystack instanceof Array) {
-            for (var i in haystack) { if (haystack[i] == needle)  { return true; } }
-            return false;
-        }
-        else if (haystack instanceof Object) { return (needle in haystack); } else { return false; }
-    };
-
-    contains(needle) {
-        return new Filter(needle).in(this.value);
+        if (haystack instanceof Array)          { return haystack.indexOf(needle) > -1; }
+        if (haystack instanceof Object)         { return needle in haystack; }
     };
 
     pluralword(words) {
-        var initial_num = this.value;
         if (typeof(words) == "string") words = JSON.parse(words);
-        var num = parseInt(initial_num) % 100;
-        var word;
+        var num = parseInt(this.value) % 100;
         if (num > 19) { num = num % 10; }
-        if (num == 1) { word = words[0]; }
-        else if (num == 2 || num == 3 || num == 4) { word = words[1]; }
-        else { word = words[2]; }
-        return word;
-    };
-
-    pluralform(words) {
-        return this.value + " " + this.pluralword(words);
+        return {1: words[0], 2: words[1], 3: words[1], 4: words[1]}[num] || words[2];
     };
 
     html() {
-        return decodeURI(
-            this.value
-            .replace(/&amp;/g, "&")
-            .replace(/&lt;/g, "<")
-            .replace(/&gt;/g, ">")
-            .replace(/&quot;/g, '"')
-            .replace(/&#39;/g, "'")
-            .replace(/&#x2F;/g, "/")
+        return decodeURI(this.value
+            .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+            .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x2F;/g, "/")
         );
     }
 
-    json() {
-        return JSON.stringify(this.value);
-    }
-
+    json()              { return JSON.stringify(this.value); }
+    exists()            { return this.length() > 0; }
+    pluralform(words)   { return this.value + " " + this.pluralword(words); };
+    startswith(prefix)  { return this.value.indexOf(prefix) == 0; }
+    endswith(suffix)    { return this.value.indexOf(suffix) == this.value.length - suffix.length; }
+    contains(needle)    { return new Filter(needle).in(this.value); };
 }
+
 
 export class Widget {
 
@@ -120,27 +92,11 @@ export class Widget {
         this.compiler = compiler;
         this.cb = cb;
         this.internal = internal;
-        this.internal.api._render = this.render;
 
         this.internal.refresh = () => {
-            try {
-                /**
-                 *  find_parent polyfill
-                 */
-                (function(e){
-                    e.find_parent = function(css) {
-                        var parent = this.parentElement;
-
-                        while (parent) {
-                            if (parent.matches(css)) return parent;
-                            else parent = parent.parentElement;
-                        }
-                        return null;
-                    }
-                })(Element.prototype);
-
+            try
+            {
                 var widget = document.getElementById(this.internal.uid);
-
                 var target = widget;
                 if (this.compiler.config.refresh_up && this.compiler.config.state == "shared") {
                     do {
@@ -150,89 +106,61 @@ export class Widget {
                 }
 
                 target.outerHTML = this.compiler.instances[target.getAttribute("id")].render();
-
-            } catch (ReferenceError) {
-                // it's ok... no document object... tests...
             }
+            catch (e) {}
         }
 
-        this.internal.subscribe = (eventName, cb, origin) => {
-            this.compiler.subscribe(eventName, cb, origin);
-        }
-
-        this.internal.broadcast = (eventName, message) => {
-            this.compiler.broadcast(eventName, message, this.internal.api);
-        }
+        this.internal.subscribe = (eName, cb, origin) => { this.compiler.subscribe(eName, cb, origin); }
+        this.internal.broadcast = (eName, message) => { this.compiler.broadcast(eName, message, this.internal.api); }
     }
 
-    api() {
-        return this.internal.api;
-    }
+    api() { return this.internal.api; }
 
     render(state) {
         this.internal.state = state || this.internal.state;
-        var result = this.cb();
-        return result.replace(/\s\s+/mig, " ");
+        return this.cb().replace(/\s\s+/mig, " ");
     }
 
     exp(source, additional_scope, iternum) {
-        if (source === undefined) return "";
-        source = source.trim();
+
+        try                 { source = source.trim(); }
+        catch (TypeError)   { return ""; }
 
         if (/\((.+?)\)/mig.test(source)) {
             source = source.replace(/\((.+?)\)/mig, (m,s) => {
-                if (s.indexOf('"') == 0 || s.indexOf("'") == 0) {
-                    return "(" + s + ")";
-                }
                 return "(" + this.exp(s, additional_scope, iternum) + ")";
             });
         }
 
         if (/for (.+?) in (.+?)\s(.+?)/mig.test(source)) return this.list(source, additional_scope, iternum);
-        if (/include:(.+?) with\s(.+?)/mig.test(source)) return this.include_with(source, additional_scope, iternum);
-        if (/include:(.+?)/mig.test(source)) return this.include(source, additional_scope, iternum);
-
-        if (/rebuild:(.+?) with\s(.+?)/mig.test(source)) return this.rebuild(source, additional_scope, iternum);
-
-        if (/(.+?)\?(.+?)\: (.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
+        if (/include:(.+?)/mig.test(source)) return this.include_with(source, additional_scope, iternum);
+        if (/rebuild:(.+?)/mig.test(source)) return this.rebuild(source, additional_scope, iternum);
         if (/(.+?)\?(.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
 
-        if (/(.+?)&&(.+?)/mig.test(source)) return this.cmp(source, "&&", additional_scope, iternum);
-        if (/(.+?)\|\|(.+?)/mig.test(source)) return this.cmp(source, "||", additional_scope, iternum);
-        if (/(.+?)==(.+?)/mig.test(source)) return this.cmp(source, "==", additional_scope, iternum);
-        if (/(.+?)==(.+?)/mig.test(source)) return this.cmp(source, "!=", additional_scope, iternum);
-        if (/(.+?) < (.+?)/mig.test(source)) return this.cmp(source, "<", additional_scope, iternum);
-        if (/(.+?) > (.+?)/mig.test(source)) return this.cmp(source, ">", additional_scope, iternum);
-        if (/(.+?)<=(.+?)/mig.test(source)) return this.cmp(source, "<=", additional_scope, iternum);
-        if (/(.+?)>=(.+?)/mig.test(source)) return this.cmp(source, ">=", additional_scope, iternum);
+        var seps = ["&&", "||", "==", "!=", " < ", " > ", ">=", "<="];
+        for (var i=0; i < seps.length; i++) {
+            if (source.indexOf(seps[i]) > -1) {
+                let [l,r] = source.split(seps[i]);
+                return this.cmp2(l, r, seps[i], additional_scope, iternum);
+            }
+        }
 
         if (source.indexOf("[") == 0 || source.indexOf("{") == 0) return source;
-
         return this.var(source, additional_scope, iternum);
     }
 
     var(source, additional_scope, iternum) {
         var that = this;
-
+        var result = null;
         if (source.indexOf("$") > -1) {
             source = source.replace(
                 /\$[A-Za-zА-Яа-я0-9_.]+(\|+(.+?)[\)\s])*/mig,
-                function (m,s) {
-                    var extracted_value = that.extract(m, additional_scope, iternum);
-                    if (extracted_value instanceof Array) extracted_value = JSON.stringify(extracted_value);
-                    return extracted_value;
-                }
+                function (m,s) { return that.extract(m, additional_scope, iternum); }
             );
         }
 
-
-        var result = null;
-        try {
-            result = eval(source);
-        } catch (Exception){
-            result = source;
-        }
-
+        try         { result = eval(source); }
+        catch (e)   { result = source; }
         return result;
     }
 
@@ -242,18 +170,13 @@ export class Widget {
 
         if (iternum && path == "$i") return iternum();
 
-        path = path.replace("$$", "").replace("$", "").trim().split(".");
-        var data = this.internal.state;
+        path = path.replace("$", "").trim().split(".");
+        var data = Object.assign({}, this.internal.state, additional_scope);
         var value = null;
         var path_part = path.shift();
 
         while (path_part) {
-            if (additional_scope && path_part in additional_scope) {
-                value = additional_scope[path_part];
-                additional_scope = additional_scope[path_part];
-                path_part = path.shift();
-            }
-            else if (path_part in data) {
+            if (path_part in data) {
                 value = data[path_part];
                 data = data[path_part];
                 path_part = path.shift();
@@ -267,13 +190,9 @@ export class Widget {
         value = this.escape(value);
 
         if (filter) {
-            var params;
-            if (filter.indexOf(")") != filter.length - 1) filter = filter + "()";
-            else {
-                [,,params] = filter.match(/(.+?)\((.*?)\)$/);
-                if (params.length && params.indexOf('"') != 0 && params.indexOf("'") != 0 && params.indexOf('[') != 0 && params.indexOf('{') != 0) {
-                    filter = filter.replace(params, '"' + params + '"');
-                }
+            let [,,params] = filter.match(/(.+?)\((.*?)\)$/);
+            if (params.length && params.indexOf('"') != 0 && params.indexOf("'") != 0 && params.indexOf('[') != 0 && params.indexOf('{') != 0) {
+                filter = filter.replace(params, '"' + params + '"');
             }
             value = eval("(new Filter(value))." + filter);
         }
@@ -286,32 +205,27 @@ export class Widget {
             return obj.replace(/[&<>"'\/]/g, function (s) { return entityMap[s]; });
         }
         return obj;
-    };
+    }
 
-    cmp(var_name, sep, additional_scope, iternum) {
-        let [v1, v2] = var_name.split(sep);
-        if (sep == "||") {
-            try {
-                return eval(this.exp(v1, additional_scope, iternum) + sep + this.exp(v2, additional_scope, iternum));
-            } catch (ReferenceError) {
-                try {
-                    return eval(this.exp(v1, additional_scope, iternum) + sep + '`' + this.exp(v2, additional_scope, iternum) + '`');
-                } catch (ReferenceError) {
-                    try {
-                        return eval('`' + this.exp(v1, additional_scope, iternum) + '`' + sep + this.exp(v2, additional_scope, iternum));
-                    } catch (ReferenceError) {
-                        return eval('`' + this.exp(v1, additional_scope, iternum) + '`' + sep + '`' + this.exp(v2, additional_scope, iternum) + '`');
-                    }
-                }
+    cmp2(v1, v2, sep,additional_scope, iternum) {
+        v1 = this.exp(v1, additional_scope, iternum);
+        v2 = this.exp(v2, additional_scope, iternum);
+        try { return eval(v1 + sep + v2); }
+        catch (ReferenceError) {
+            try { return eval(v1 + sep + '`' + v2 + '`'); }
+            catch (ReferenceError) {
+                try { return eval('`' + v1 + '`' + sep + v2); }
+                catch (ReferenceError) { return eval('`' + v1 + '`' + sep + '`' + v2 + '`'); }
             }
         }
-        return eval(this.exp(v1, additional_scope, iternum) + sep + this.exp(v2, additional_scope, iternum));
     }
 
     ternary(var_name, additional_scope, iternum) {
         var_name = var_name.replace(":", "?");
         let [path, positive, negative] = var_name.split("?");
-        return this.exp(path, additional_scope, iternum) ? this.exp(positive, additional_scope, iternum) : this.exp(negative, additional_scope, iternum);
+        return this.exp(path, additional_scope, iternum)
+            ? this.exp(positive, additional_scope, iternum)
+            : this.exp(negative, additional_scope, iternum);
     }
 
     list(expression, additional_scope, iternum) {
@@ -378,37 +292,36 @@ export class Widget {
         return widget.render();
     }
 
-    include_with(expression, additional_scope, iternum) {
-        let [,template,data] = expression.match(/include:(.+?) with\s(.+?)$/);
-
+    scope(data, additional_scope, iternum) {
         if (data.indexOf("[") == 0 || data.indexOf("{") == 0) {
             data = this.var(data, additional_scope, iternum);
             data = JSON.parse(data);
         }
         else data = this.extract(data);
 
-        return this.include(template, Object.assign({}, this.compiler.deepclone(this.internal.state), data), iternum);
+        return Object.assign({}, this.compiler.deepclone(this.internal.state), data);
+    }
+
+    include_with(expression, additional_scope, iternum) {
+        if (expression.indexOf("with") > -1) {
+            let [,template,data] = expression.match(/include:(.+?) with\s(.+?)$/);
+            additional_scope = this.scope(data, additional_scope, iternum);
+            expression = template;
+        }
+        return this.include(expression, additional_scope, iternum);
     }
 
     rebuild(expression, additional_scope, iternum) {
         let [,template,data] = expression.match(/rebuild:(.+?) with\s(.+?)$/);
-
-        if (data.indexOf("[") == 0 || data.indexOf("{") == 0) {
-            data = this.var(data, additional_scope, iternum);
-            data = JSON.parse(data);
-        }
-        else data = this.extract(data);
-
-        return this.include(template, Object.assign({}, this.compiler.deepclone(this.internal.state), data), iternum);
+        return this.include(template, this.scope(data, additional_scope, iternum), iternum);
     }
 }
+
 
 class ControllerFactory {
     constructor(router) {
         this.router = {};
-        for (var routePattern in router) {
-            this.router[routePattern.trimAll("/")] = router[routePattern];
-        };
+        for (var routePattern in router) { this.router[routePattern.trimAll("/")] = router[routePattern]; };
     }
 
     extractParameters(url, routePattern) {
@@ -442,7 +355,6 @@ class ControllerFactory {
                     best_controller = this.router[routePattern];
                     best_controller_request = this.extractParameters(url, routePattern);
                     best_controller_placeholders = phCount;
-
                     if (phCount == 1) break;
                 }
             }
@@ -487,9 +399,7 @@ export class Compiler {
     }
 
     deepclone(source) {
-
         if (this.config.state == "shared") return source;
-
         var destination = {};
         for (var property in source) {
             if (typeof source[property] === "object" && source[property] !== null) {
@@ -526,9 +436,7 @@ export class Compiler {
                 repl[to_compile] = compiled;
             }
 
-            for (to_compile in repl) {
-                template = template.replace(to_compile, repl[to_compile]);
-            }
+            for (to_compile in repl) { template = template.replace(to_compile, repl[to_compile]); }
 
             return template;
     }
@@ -560,14 +468,11 @@ export class Compiler {
 
     compile(t, state, includes) {
         var uid = this.generateUID2(t);
-
-        var prev_state = {};
-        if (this.instances[uid]) {
-            prev_state = this.instances[uid].internal.state;
-        }
+        var prev_state = this.instances[uid] ? this.instances[uid].internal.state : {};
 
         state = state || {};
         includes = includes || {};
+
         var internal = this.build_internal(uid, Object.assign(prev_state, state), includes, t);
 
         if (t.init) t.init(internal);
@@ -582,9 +487,7 @@ export class Compiler {
             }
         }
         // no window object:
-        catch (Exception) {
-            template = t.template;
-        }
+        catch (ReferenceError) { template = t.template; }
 
         template = template.replace(/\s\s+/mig, " ").trim();
         template = this.chunks(template, (to_compile) => {
@@ -595,11 +498,7 @@ export class Compiler {
 
         var widget = new Widget(() => { return eval('() => { return `' + template + '`}')(); }, internal, this);
 
-        try {
-            this.instances[uid] = widget;
-        }
-        // no window object:
-        catch (Exception) {}
+        this.instances[uid] = widget;
 
         return widget;
     }
@@ -616,10 +515,8 @@ export class Compiler {
 
         if (loadTarget) {
 
-            // compile baseWidget:
             document.body.innerHTML = this.compileTarget(target).render();
 
-            // initialize all <widget>'s:
             var widgets = [].slice.call(document.getElementsByTagName("widget"));
             widgets.forEach((widget) => {
                 var api = this.instances[widget.getAttribute("id")].api();
@@ -659,11 +556,10 @@ export class Compiler {
 
 }
 
+
 export class HashStrategy {
     getCurrentLocation() {
-        var url = location.hash || "/";
-        url = url.replace("#", "");
-        return url;
+        return (location.hash || "/").replace("#", "");
     }
     onClick(event) {
         var href = event.target.href;
@@ -680,4 +576,4 @@ try {
     };
 
     domReady(() => { (new Compiler(window.router, window.config)).load() });
-} catch (Exception) {}
+} catch (e) {}
