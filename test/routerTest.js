@@ -5,71 +5,75 @@ import {App,Widget} from "../src/classes/App";
 
 describe('Router', () => {
 
+    let page = {"template": "page"};
+    let subpage = {"template": "subpage"};
+    let digit = {"template": "digit"};
+
     it('should select correct controller for clean urls and url with parameters', () => {
         let c = new App({
-            "/page1/": require("../src/app/test_inclusion"),
-            "/page1/subpage/": require("../src/app/subpage"),
-            "/page1/subpage/<name>/": require("../src/app/subpage"),
-            "/<any>/": require("../src/app/digit"),
+            "/page/": page,
+            "/page/subpage/": subpage,
+            "/page/subpage/<name>/": subpage,
+            "/<any>/": digit,
         });
 
         assert.throws(() => { c.getLoadTarget("/") }, Error, "404 NotFound");
-        assert.equal(require("../src/app/test_inclusion"), c.getLoadTarget("/page1/").controller);
-        assert.equal(require("../src/app/subpage"), c.getLoadTarget("/page1/subpage/").controller);
-        assert.equal(require("../src/app/subpage"), c.getLoadTarget("/page1/subpage/andrey/").controller);
-        assert.equal(require("../src/app/digit"), c.getLoadTarget("/page2/").controller);
+        assert.equal(page, c.getLoadTarget("/page/").controller);
+        assert.equal(subpage, c.getLoadTarget("/page/subpage/").controller);
+        assert.equal(subpage, c.getLoadTarget("/page/subpage/andrey/").controller);
+        assert.equal(digit, c.getLoadTarget("/page2/").controller);
     });
 
     it('should select correct controller despite usage of trailing slashes', () => {
         // routes are defined without trailing slash:
         let c1 = new App({
-            "/page1": require("../src/app/test_inclusion"),
-            "/page1/subpage": require("../src/app/subpage"),
-            "/page1/subpage/<name>": require("../src/app/subpage"),
-            "/<any>": require("../src/app/digit"),
+            "/page": page,
+            "/page/subpage": subpage,
+            "/page/subpage/<name>": subpage,
+            "/<any>": digit,
         });
 
         // but requested with trailing slashes:
         assert.throws(() => { c1.getLoadTarget("/") }, Error, "404 NotFound");
-        assert.equal(require("../src/app/test_inclusion"), c1.getLoadTarget("/page1/").controller);
-        assert.equal(require("../src/app/subpage"), c1.getLoadTarget("/page1/subpage/").controller);
-        assert.equal(require("../src/app/subpage"), c1.getLoadTarget("/page1/subpage/andrey/").controller);
-        assert.equal(require("../src/app/digit"), c1.getLoadTarget("/page2/").controller);
+        assert.equal(page, c1.getLoadTarget("/page/").controller);
+        assert.equal(subpage, c1.getLoadTarget("/page/subpage/").controller);
+        assert.equal(subpage, c1.getLoadTarget("/page/subpage/andrey/").controller);
+        assert.equal(digit, c1.getLoadTarget("/page2/").controller);
 
         // routes are defined with trailing slashes:
         let c2 = new App({
-            "/": require("../src/app/test_inclusion"),
-            "/page1/": require("../src/app/test_inclusion"),
-            "/page1/subpage/": require("../src/app/subpage"),
-            "/page1/subpage/<name>/": require("../src/app/subpage"),
-            "/<any>/": require("../src/app/digit"),
+            "/": page,
+            "/page/": page,
+            "/page/subpage/": subpage,
+            "/page/subpage/<name>/": subpage,
+            "/<any>/": digit,
         });
 
         // but requested without:
-        assert.equal(require("../src/app/test_inclusion"), c2.getLoadTarget("/").controller);
-        assert.equal(require("../src/app/test_inclusion"), c2.getLoadTarget("/page1").controller);
-        assert.equal(require("../src/app/subpage"), c2.getLoadTarget("/page1/subpage").controller);
-        assert.equal(require("../src/app/subpage"), c2.getLoadTarget("/page1/subpage/andrey").controller);
-        assert.equal(require("../src/app/digit"), c2.getLoadTarget("/page2").controller);
+        assert.equal(page, c2.getLoadTarget("/").controller);
+        assert.equal(page, c2.getLoadTarget("/page").controller);
+        assert.equal(subpage, c2.getLoadTarget("/page/subpage").controller);
+        assert.equal(subpage, c2.getLoadTarget("/page/subpage/andrey").controller);
+        assert.equal(digit, c2.getLoadTarget("/page2").controller);
     });
 
 
     it('should select more specific pattern over those that are more general', () => {
         // helping order:
         let c1 = new App({
-            "/page1/subpage/<anything>/": require("../src/app/test_inclusion"),
-            "/page1/<subpage>/<anything>/": require("../src/app/subpage"),
+            "/page/subpage/<anything>/": page,
+            "/page/<subpage>/<anything>/": subpage,
         });
-        assert.equal(require("../src/app/test_inclusion"), c1.getLoadTarget("/page1/subpage/anything").controller);
-        assert.equal(require("../src/app/subpage"), c1.getLoadTarget("/page1/anything/anything/").controller);
+        assert.equal(page, c1.getLoadTarget("/page/subpage/anything").controller);
+        assert.equal(subpage, c1.getLoadTarget("/page/anything/anything/").controller);
 
         // wrong order:
         let c2 = new App({
-            "/page1/<subpage>/<anything>/": require("../src/app/subpage"),
-            "/page1/subpage/<anything>/": require("../src/app/test_inclusion"),
+            "/page/<subpage>/<anything>/": subpage,
+            "/page/subpage/<anything>/": page,
         });
-        assert.equal(require("../src/app/test_inclusion"), c2.getLoadTarget("/page1/subpage/anything").controller);
-        assert.equal(require("../src/app/subpage"), c2.getLoadTarget("/page1/anything/anything/").controller);
+        assert.equal(page, c2.getLoadTarget("/page/subpage/anything").controller);
+        assert.equal(subpage, c2.getLoadTarget("/page/anything/anything/").controller);
     });
 
     it('should be able to correctly extract url parameters', () => {
@@ -88,14 +92,14 @@ describe('Router', () => {
 
         let c = new App({
             "/<action>/": module1,
-            "/page1/<subpage>/<anything>/": module2,
+            "/page/<subpage>/<anything>/": module2,
         });
 
-        let target = c.getLoadTarget("/page1/");
+        let target = c.getLoadTarget("/page/");
         let widget1 = c.compileTarget(target);
 
-        assert.equal("<a>page1</a>", widget1.render())
-        assert.deepEqual({"action": "page1"}, widget1.api().returnRequest());
+        assert.equal("<a>page</a>", widget1.render())
+        assert.deepEqual({"action": "page"}, widget1.api().returnRequest());
 
     });
 

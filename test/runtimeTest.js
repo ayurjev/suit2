@@ -5,6 +5,22 @@ import {App,Widget} from "../src/classes/App";
 
 describe('Widget', () => {
 
+    let page = {
+        template: "His name is <b>{$user.name}</b> and he is {$user.age} years old",
+        init: function(internal) {
+            internal.api.change = function(name, age) {
+                internal.state.user.name = name;
+                internal.state.user.age = age;
+                internal.state.local_property = "xxx";
+                internal.refresh();
+            }
+
+            internal.api.get_state = function() {
+                return internal.state;
+            }
+        }
+    };
+
     it('should have default api() method', () => {
         let c = new App();
 
@@ -23,9 +39,7 @@ describe('Widget', () => {
             {
                 template: '{include:test_inclusion}',
                 init: function(internal) {
-                    internal.includes = {
-                        "test_inclusion": require("../src/app/test_inclusion")
-                    };
+                    internal.includes = {"test_inclusion": page};
                     internal.api.get_test_inclusion = function() {
                         return internal.includes.test_inclusion;
                     }
@@ -88,7 +102,7 @@ describe('Widget', () => {
                 init: function(internal) {
 
                     internal.includes = {
-                        "test_inclusion": require("../src/app/test_inclusion")
+                        "test_inclusion": page
                     }
 
                     internal.api.change_parent = function() {
@@ -141,9 +155,7 @@ describe('Widget', () => {
                 `,
                 init: function(internal) {
 
-                    internal.includes = {
-                        "test_inclusion": require("../src/app/test_inclusion")
-                    }
+                    internal.includes = {"test_inclusion": page}
 
                     internal.api.get_state_from_parent = function() {
                         return internal.state;

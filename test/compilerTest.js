@@ -210,9 +210,12 @@ describe('App', () => {
 
     it('should support include syntax', () => {
         let c = new App();
+
+        let testInclusion = {"template": `His name is <b>{$user.name}</b> and he is {$user.age} years old`}
+
         let widget = c.compile(
             {template: `PREFIX-{include:inclusion_name}-SUFFIX`}, {user: {name: "Andrey", age: 28}}, {
-                "inclusion_name": require("../src/app/test_inclusion")
+                "inclusion_name": testInclusion
             }
         );
         assert.equal('PREFIX-His name is <b>Andrey</b> and he is 28 years old-SUFFIX', widget.render());
@@ -220,9 +223,12 @@ describe('App', () => {
 
     it('should support include syntax with variables', () => {
         let c = new App();
+
+        let digit = {"template": `{$digit}`}
+
         let widget = c.compile(
             {template: `PREFIX-{for $d in [1,2,3] {include:digit with {"digit": $d}}-}SUFFIX`}, {}, {
-                "digit": require("../src/app/digit")
+                "digit": digit
             }
         );
         assert.equal('PREFIX-1-2-3-SUFFIX', widget.render());
@@ -230,11 +236,14 @@ describe('App', () => {
 
     it('should support include syntax with dynamic inclusion name', () => {
         let c = new App();
+
+        let digit = {"template": `{$digit}`}
+
         let widget = c.compile(
             {
                 template: `PREFIX-{for $d in [1,2,3] {include:$includeName with {"digit": $d}}-}SUFFIX`},
                 {"includeName": "digit"},
-                {"digit": require("../src/app/digit")}
+                {"digit": digit}
         );
         assert.equal('PREFIX-1-2-3-SUFFIX', widget.render());
     });
@@ -242,9 +251,13 @@ describe('App', () => {
     it('should support rebuild syntax', () => {
         let c = new App();
 
+        let baseTemplate = {
+            "template": `PREFIX-{$content || DEFAULT-CONTENT}-SUFFIX-{$fixed || ENDING}`
+        }
+
         let baseWidget = c.compile(
             {template: `{include:base_template}`}, {}, {
-                "base_template": require("../src/app/base_template")
+                "base_template": baseTemplate
             }
         );
 
@@ -252,7 +265,7 @@ describe('App', () => {
 
         let rebasedWidget = c.compile(
             {template: `{rebuild:base_template with {"content": "REBASED-CONTENT", "blablatag": "222"}}`}, {}, {
-                "base_template": require("../src/app/base_template")
+                "base_template": baseTemplate
             }
         );
         assert.equal('PREFIX-REBASED-CONTENT-SUFFIX-ENDING', rebasedWidget.render());
