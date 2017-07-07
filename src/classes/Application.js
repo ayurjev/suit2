@@ -655,7 +655,7 @@ export class PathStrategy {
         this.app = app;
     }
     getCurrentLocation() {
-        return (this.app.config["baseDir"] || "") + (location.pathname || "/");
+        return (location.pathname || "/").replace((this.app.config["baseDir"] || ""), "");
     }
     onClick(event, cb, app) {
         var href = (this.app.config["baseDir"] || "") + event.target.pathname;
