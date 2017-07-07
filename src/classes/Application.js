@@ -2,9 +2,9 @@
 /**
  *  Main Appilcation class
  */
-export class App {
+export class Application {
 
-    constructor(router, config) {
+    constructor(router, config, includes) {
         this.router = router || {};
         this.config = config || {};
         this.instances = {};
@@ -12,6 +12,7 @@ export class App {
         this.uids_cache = {};
         this.router.strategy = this.router.strategy || new HashStrategy();
         this.controllerFactory = new ControllerFactory(this.router);
+        this.global_includes = includes || {};
         this.initDomListeners();
     }
 
@@ -19,7 +20,6 @@ export class App {
      *  Initializing Dom Event Listeners
      */
     initDomListeners() {
-
             // domReady:
             let domReadyCallback = () => {
 
@@ -32,7 +32,6 @@ export class App {
 
                 window.addEventListener('popstate', (e) => { this.load() }, false);
                 this.load();
-
             };
 
             try {
@@ -84,10 +83,13 @@ export class App {
 
                 while (stack > 0) {
                     p++;
-                    if (template[p] == "{") stack++;
-                    if (template[p] == "}") stack--;
+                    if (template[p]) {
+                        if (template[p] == "{") stack++;
+                        if (template[p] == "}") stack--;
+                    } else {
+                        throw new UnbalancedBracketsError("in template: " + template.slice(start, p));
+                    }
                 }
-
                 var to_compile = template.slice(start, p + 1);
                 var compiled = compile_cb(to_compile);
 
@@ -122,10 +124,9 @@ export class App {
      *  Compiling js-module into Widget-instance
      */
     compile(t, state, includes) {
-
         var uid = this.generateUID(t);
         var prev_state = this.instances[uid] ? this.instances[uid].internal.state : {};
-        var internal = new Internal(uid, Object.assign(prev_state, state), includes);
+        var internal = new Internal(uid, Object.assign(prev_state, state), includes, t.name);
 
         if (t.init) t.init(internal);
 
@@ -134,6 +135,7 @@ export class App {
         catch (ReferenceError)  { template = t.template; }
 
         template = template.replace(/\s\s+/mig, " ").trim();
+
         template = this.chunks(template, (to_compile) => {
             return to_compile.replace(/{((.|\n)+)}/ig, (m, s) => {
                 return "`+this.exp(`"+s+"`)+`";
@@ -168,6 +170,7 @@ export class App {
             document.body.innerHTML = this.compileTarget(loadTarget).render();
 
             var widgets = [].slice.call(document.getElementsByTagName("widget"));
+
             widgets.forEach((widget) => {
                 var api = this.instances[widget.getAttribute("id")].api();
                 api.createListeners();
@@ -224,7 +227,7 @@ export class App {
  */
 class Internal {
 
-    constructor(uid, state, includes) {
+    constructor(uid, state, includes, widgetName) {
         this.uid = uid;
         this.tag = () => { try { return document.getElementById(this.uid);  } catch (e) {} }
         this.api = {
@@ -233,6 +236,7 @@ class Internal {
         };
         this.state = state || {};
         this.includes = includes || {};
+        this._widgetName = widgetName;
 
         this.subscribe = (eName, cb, origin) => { window.app.subscribe(eName, cb, origin); }
         this.broadcast = (eName, message) => { window.app.broadcast(eName, message, this.api); }
@@ -294,9 +298,15 @@ export class Widget {
             });
         }
 
-        if (/for (.+?) in (.+?)\s(.+?)/mig.test(source)) return this.list(source, additional_scope, iternum);
-        if (/include:(.+?)/mig.test(source)) return this.include_with(source, additional_scope, iternum);
-        if (/rebuild:(.+?)/mig.test(source)) return this.rebuild(source, additional_scope, iternum);
+        // if (/{(.+?)}/mig.test(source)) {
+        //     source = source.replace(/\((.+?)\)/mig, (m,s) => {
+        //         return "(" + this.exp(s, additional_scope, iternum) + ")";
+        //     });
+        // }
+
+        if (/^for (.+?) in (.+?)\s(.+?)$/mig.test(source)) return this.list(source, additional_scope, iternum);
+        if (/^include:(.+?)$/mig.test(source)) return this.include_with(source, additional_scope, iternum);
+        if (/^rebuild:(.+?)$/mig.test(source)) return this.rebuild(source, additional_scope, iternum);
         if (/(.+?)\?(.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
 
         var seps = ["&&", "||", "==", "!=", " < ", " > ", ">=", "<="];
@@ -356,7 +366,7 @@ export class Widget {
             }
         }
 
-        value = this.escape(value);
+        //value = this.escape(value);
 
         if (filter) {
             let [,params] = filter.match(/(?:.+?)\((.*?)\)$/);
@@ -452,18 +462,26 @@ export class Widget {
      * Including other widgets
      */
     include(expression, additional_scope, iternum) {
-
         expression = expression.replace("include:", "").trim();
 
         if (expression.indexOf("$") == 0) expression = this.extract(expression);
 
-        var t = this.internal.includes[expression];
+        var t = this.internal.includes[expression] || this.app.global_includes[expression];
 
-        if (t.uid instanceof Function || t instanceof Array) {
+        if ((t && t.uid instanceof Function) || t instanceof Array) {
             t = this.internal._includes[expression];
         }
 
-        if (!t) { require(expression); }
+        if (!t) {
+            try {
+                t = require(expression);
+            }
+            catch (Exception) {
+                throw new WidgetNotFoundError(
+                    "widget '" + expression + "' not found. Check internal.includes property of '" + this.internal._widgetName + "' widget"
+                );
+            }
+        }
 
         var widget = this.app.compile(
             t, Object.assign({},  this.app.deepClone(this.internal.state), additional_scope)
@@ -511,6 +529,15 @@ export class Widget {
      */
     rebuild(expression, additional_scope, iternum) {
         let [,template,data] = expression.match(/rebuild:(.+?) with\s(.+?)$/);
+
+        data = JSON.parse(data);
+
+        for (var item in data) {
+            var scope = Object.assign({}, this.app.deepClone(this.internal.state), additional_scope)
+            data[item] = this.exp(data[item]);
+        }
+        data = JSON.stringify(data);
+
         return this.include(template, this.scope(data, additional_scope, iternum), iternum);
     }
 }
@@ -696,3 +723,9 @@ String.prototype.trimAll = function(mask) {
     while (~mask.indexOf(s[s.length - 1])) { s = s.slice(0, -1); }
     return s;
 };
+
+export function UnbalancedBracketsError(message) { this.message = (message || ""); }
+UnbalancedBracketsError.prototype = new Error();
+
+export function WidgetNotFoundError(message) { this.message = (message || ""); }
+WidgetNotFoundError.prototype = new Error();

@@ -1,11 +1,11 @@
 var assert = require('assert');
 
-import {App,Widget} from "../src/classes/App";
+import {Application,Widget} from "../src/classes/Application";
 
 
-describe('App', () => {
+describe('Application', () => {
 
-    let c = new App();
+    let c = new Application();
 
     it('should compile template into class Widget', () => {
         let widget = c.compile({template: 'anything'});
@@ -209,7 +209,7 @@ describe('App', () => {
     });
 
     it('should support include syntax', () => {
-        let c = new App();
+        let c = new Application();
 
         let testInclusion = {"template": `His name is <b>{$user.name}</b> and he is {$user.age} years old`}
 
@@ -222,7 +222,7 @@ describe('App', () => {
     });
 
     it('should support include syntax with variables', () => {
-        let c = new App();
+        let c = new Application();
 
         let digit = {"template": `{$digit}`}
 
@@ -235,7 +235,7 @@ describe('App', () => {
     });
 
     it('should support include syntax with dynamic inclusion name', () => {
-        let c = new App();
+        let c = new Application();
 
         let digit = {"template": `{$digit}`}
 
@@ -249,7 +249,7 @@ describe('App', () => {
     });
 
     it('should support rebuild syntax', () => {
-        let c = new App();
+        let c = new Application();
 
         let baseTemplate = {
             "template": `PREFIX-{$content || DEFAULT-CONTENT}-SUFFIX-{$fixed || ENDING}`
@@ -269,6 +269,36 @@ describe('App', () => {
             }
         );
         assert.equal('PREFIX-REBASED-CONTENT-SUFFIX-ENDING', rebasedWidget.render());
+    });
+
+    it('should support rebuild syntax2', () => {
+        let c = new Application();
+
+        let baseTemplate = {
+            "template": `PREFIX-{$content || DEFAULT-CONTENT}-SUFFIX-{$fixed || ENDING}`
+        }
+
+        let baseWidget = c.compile(
+            {template: `{include:base_template}`}, {}, {
+                "base_template": baseTemplate
+            }
+        );
+
+        assert.equal('PREFIX-DEFAULT-CONTENT-SUFFIX-ENDING', baseWidget.render());
+
+        let rebasedWidget = c.compile(
+            {template: `{rebuild:base_template with {"content": "REBASED-CONTENT", "blablatag": "222"}}`}, {}, {
+                "base_template": baseTemplate
+            }
+        );
+        assert.equal('PREFIX-REBASED-CONTENT-SUFFIX-ENDING', rebasedWidget.render());
+
+
+        let finalWidget = c.compile(
+            {template: `{include:rebasedWidget}`}, {}, {
+                "rebasedWidget": rebasedWidget
+            }
+        );
     });
 
 

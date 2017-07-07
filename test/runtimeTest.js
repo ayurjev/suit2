@@ -1,6 +1,6 @@
 var assert = require('assert');
 
-import {App,Widget} from "../src/classes/App";
+import {Application,Widget} from "../src/classes/Application";
 
 
 describe('Widget', () => {
@@ -22,7 +22,7 @@ describe('Widget', () => {
     };
 
     it('should have default api() method', () => {
-        let c = new App();
+        let c = new Application();
 
         let widget = c.compile(
             {template: 'anything'}
@@ -33,7 +33,7 @@ describe('Widget', () => {
     });
 
     it('should convert internal inclusions into widgets api', () => {
-        let c = new App();
+        let c = new Application();
 
         let widget = c.compile(
             {
@@ -61,7 +61,7 @@ describe('Widget', () => {
     });
 
     it('should allow to us to change its state and refresh it from inside', () => {
-        let c = new App();
+        let c = new Application();
 
         let widget = c.compile(
             {
@@ -92,7 +92,7 @@ describe('Widget', () => {
     });
 
     it('should share state between widgets if compiler configured to work with shared state', () => {
-        let c = new App({}, {state: "shared"});
+        let c = new Application({}, {state: "shared"});
         let widget = c.compile(
             {
                 template: `
@@ -145,7 +145,7 @@ describe('Widget', () => {
     });
 
     it('should NOT share state between widgets if compiler configured to work with local state', () => {
-        let c = new App({}, {state: "local"});
+        let c = new Application({}, {state: "local"});
 
         let widget = c.compile(
             {

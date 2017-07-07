@@ -1,6 +1,6 @@
 var assert = require('assert');
 
-import {App,Widget} from "../src/classes/App";
+import {Application,Widget} from "../src/classes/Application";
 
 
 describe('Router', () => {
@@ -10,7 +10,7 @@ describe('Router', () => {
     let digit = {"template": "digit"};
 
     it('should select correct controller for clean urls and url with parameters', () => {
-        let c = new App({
+        let c = new Application({
             "/page/": page,
             "/page/subpage/": subpage,
             "/page/subpage/<name>/": subpage,
@@ -26,7 +26,7 @@ describe('Router', () => {
 
     it('should select correct controller despite usage of trailing slashes', () => {
         // routes are defined without trailing slash:
-        let c1 = new App({
+        let c1 = new Application({
             "/page": page,
             "/page/subpage": subpage,
             "/page/subpage/<name>": subpage,
@@ -41,7 +41,7 @@ describe('Router', () => {
         assert.equal(digit, c1.getLoadTarget("/page2/").controller);
 
         // routes are defined with trailing slashes:
-        let c2 = new App({
+        let c2 = new Application({
             "/": page,
             "/page/": page,
             "/page/subpage/": subpage,
@@ -60,7 +60,7 @@ describe('Router', () => {
 
     it('should select more specific pattern over those that are more general', () => {
         // helping order:
-        let c1 = new App({
+        let c1 = new Application({
             "/page/subpage/<anything>/": page,
             "/page/<subpage>/<anything>/": subpage,
         });
@@ -68,7 +68,7 @@ describe('Router', () => {
         assert.equal(subpage, c1.getLoadTarget("/page/anything/anything/").controller);
 
         // wrong order:
-        let c2 = new App({
+        let c2 = new Application({
             "/page/<subpage>/<anything>/": subpage,
             "/page/subpage/<anything>/": page,
         });
@@ -90,7 +90,7 @@ describe('Router', () => {
             }
         }
 
-        let c = new App({
+        let c = new Application({
             "/<action>/": module1,
             "/page/<subpage>/<anything>/": module2,
         });

@@ -1,88 +1,95 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
 
-var _App = require("../classes/App");
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+var name = exports.name = "aboutMenu";
 
-new _App.App({
-    "/": require("./widgets/Main"),
-    "/page1/": require("./test_inclusion"),
-    "/page1/subpage/": require("./subpage")
-}, { user: { name: "Andrey", age: 28 } });
+var template = exports.template = "\n    <nav class=\"verticalMenu\">\n        <ul>\n            <li><a class=\"active\" href=\"/about/motivation\">Motivation</a></li>\n            <li><a href=\"/about/features\">Main features</a></li>\n            <li><a href=\"/about/\">You should use it if...</a></li>\n            <li><a href=\"/about/\">You should not use it if...</a></li>\n        </ul>\n    </nav>\n";
 
-},{"../classes/App":5,"./subpage":2,"./test_inclusion":3,"./widgets/Main":4}],2:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
-  value: true
+    value: true
 });
-var template = exports.template = "subpage content";
+var name = exports.name = "topMenu";
+
+var template = exports.template = "\n    <nav class=\"topMenu\">\n        <ul>\n            <li><a class=\"active\" href=\"/about/\">About</a></li>\n            <li><a href=\"/\">Docs</a></li>\n            <li><a href=\"/contact/\">Contact</a></li>\n        </ul>\n    </nav>\n";
 
 },{}],3:[function(require,module,exports){
 "use strict";
 
-Object.defineProperty(exports, "__esModule", {
-    value: true
+var _Application = require("../classes/Application");
+
+new _Application.Application({
+    "/": require("./pages/Title"),
+    "/about/motivation": require("./pages/About/Motivation"),
+    "/about/features": require("./pages/About/Features")
+}, {}, {
+    "bootstrap": require("./layouts/bootstrap"),
+    "topMenu": require("./blocks/topMenu"),
+    "aboutMenu": require("./blocks/aboutMenu")
 });
-var template = exports.template = "His name is <b>{$user.name}</b> and he is {$user.age} years old";
 
-var init = exports.init = function init(internal) {
-    internal.bugaga = "111";
-    internal.api.createListeners = function () {
-        internal.broadcast("TEST_INCLUSION_INITED", { a: 42 });
-    };
-
-    internal.api.change = function (name, age) {
-        internal.state.user.name = name;
-        internal.state.user.age = age;
-        internal.state.local_property = "xxx";
-        internal.refresh();
-    };
-
-    internal.api.get_state = function () {
-        return internal.state;
-    };
-};
-
-},{}],4:[function(require,module,exports){
+},{"../classes/Application":8,"./blocks/aboutMenu":1,"./blocks/topMenu":2,"./layouts/bootstrap":4,"./pages/About/Features":5,"./pages/About/Motivation":6,"./pages/Title":7}],4:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+var template = exports.template = "\n\t<div class=\"wrapper\">\n\t\t<header>\n\t\t\t<h1><a href=\"/\">Suit</a></h1>\n\t\t\t{include:topMenu}\n\t\t\t{$submenu || \"\"}\n\t\t</header>\n\t\t<section>\n            <h1 class=\"post-title\">{$caption}</h1>\n\t\t\t<br />\n            {$content || DEFAULT-CONTENT}\n        </section>\n    </div>\n";
+
+},{}],5:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
     value: true
 });
-var template = exports.template = "\n    <div>\n        His <a href=\"/page1/\">name</a> is <b>{$user.name}</b> and he is {$user.age} <a href=\"/page1/subpage/\">years</a> old<br />\n        {include:test_inclusion}\n    </div>\n";
+var name = exports.name = 'FeaturesPage';
+
+var template = exports.template = '\n    {\n        rebuild:bootstrap with {\n            "submenu": "include:aboutMenu"\n        }\n    }\n';
 
 var init = exports.init = function init(internal) {
 
-    internal.includes = {
-        "test_inclusion": require("../test_inclusion")
-    };
-
-    internal.api.createListeners = function () {
-        internal.subscribe("TEST_INCLUSION_INITED", function (e) {
-            console.dir(e);internal.say("GLOBAL");
-        });
-        internal.subscribe("TEST_INCLUSION_INITED", function (e) {
-            console.dir(e);internal.say("EXCLUSIVE");
-        }, internal.includes.test_inclusion);
-        internal.broadcast("TEST_INCLUSION_INITED", { "local": 55 });
-    };
-
-    internal.api.say = function () {
-        internal.say();
-    };
-
-    internal.api.change = function () {
-        internal.state.user.name = "Alexey";
-        internal.state.user.age = 42;
-        internal.refresh();
-    };
-
-    internal.say = function (msg) {
-        alert(msg);
-    };
+    internal.state.caption = 'Features';
+    internal.state.content = '\n        Features should covered here...\n    ';
 };
 
-},{"../test_inclusion":3}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+var name = exports.name = 'MotivationPage';
+
+var template = exports.template = '\n    {\n        rebuild:bootstrap with {\n            "submenu": "include:aboutMenu"\n        }\n    }\n';
+
+var init = exports.init = function init(internal) {
+
+    internal.state.caption = 'Motivation';
+    internal.state.content = '\n        Motivation should be explained here...\n    ';
+};
+
+},{}],7:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+var name = exports.name = 'TitlePage';
+
+var template = exports.template = '\n    {\n        rebuild:bootstrap with {\n            "submenu": "include:aboutMenu"\n        }\n    }\n';
+
+var init = exports.init = function init(internal) {
+
+    internal.state.caption = 'Suit is a micro-framework for building UI that has everything you need and as easy as it can possibly be';
+    internal.state.content = '\n        Title text should be placed here...\n    ';
+};
+
+},{}],8:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -95,14 +102,17 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+exports.UnbalancedBracketsError = UnbalancedBracketsError;
+exports.WidgetNotFoundError = WidgetNotFoundError;
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /**
  *  Main Appilcation class
  */
-var App = function () {
-    function App(router, config) {
-        _classCallCheck(this, App);
+var Application = function () {
+    function Application(router, config, includes) {
+        _classCallCheck(this, Application);
 
         this.router = router || {};
         this.config = config || {};
@@ -111,6 +121,7 @@ var App = function () {
         this.uids_cache = {};
         this.router.strategy = this.router.strategy || new HashStrategy();
         this.controllerFactory = new ControllerFactory(this.router);
+        this.global_includes = includes || {};
         this.initDomListeners();
     }
 
@@ -119,7 +130,7 @@ var App = function () {
      */
 
 
-    _createClass(App, [{
+    _createClass(Application, [{
         key: "initDomListeners",
         value: function initDomListeners() {
             var _this = this;
@@ -193,10 +204,13 @@ var App = function () {
 
                 while (stack > 0) {
                     p++;
-                    if (template[p] == "{") stack++;
-                    if (template[p] == "}") stack--;
+                    if (template[p]) {
+                        if (template[p] == "{") stack++;
+                        if (template[p] == "}") stack--;
+                    } else {
+                        throw new UnbalancedBracketsError("in template: " + template.slice(start, p));
+                    }
                 }
-
                 var to_compile = template.slice(start, p + 1);
                 var compiled = compile_cb(to_compile);
 
@@ -239,10 +253,9 @@ var App = function () {
     }, {
         key: "compile",
         value: function compile(t, state, includes) {
-
             var uid = this.generateUID(t);
             var prev_state = this.instances[uid] ? this.instances[uid].internal.state : {};
-            var internal = new Internal(uid, Object.assign(prev_state, state), includes);
+            var internal = new Internal(uid, Object.assign(prev_state, state), includes, t.name);
 
             if (t.init) t.init(internal);
 
@@ -256,6 +269,7 @@ var App = function () {
             }
 
             template = template.replace(/\s\s+/mig, " ").trim();
+
             template = this.chunks(template, function (to_compile) {
                 return to_compile.replace(/{((.|\n)+)}/ig, function (m, s) {
                     return "`+this.exp(`" + s + "`)+`";
@@ -303,6 +317,7 @@ var App = function () {
                 document.body.innerHTML = this.compileTarget(_loadTarget).render();
 
                 var widgets = [].slice.call(document.getElementsByTagName("widget"));
+
                 widgets.forEach(function (widget) {
                     var api = _this2.instances[widget.getAttribute("id")].api();
                     api.createListeners();
@@ -363,7 +378,7 @@ var App = function () {
         }
     }]);
 
-    return App;
+    return Application;
 }();
 
 /**
@@ -371,10 +386,10 @@ var App = function () {
  */
 
 
-exports.App = App;
+exports.Application = Application;
 
 var Internal = function () {
-    function Internal(uid, state, includes) {
+    function Internal(uid, state, includes, widgetName) {
         var _this3 = this;
 
         _classCallCheck(this, Internal);
@@ -393,6 +408,7 @@ var Internal = function () {
         };
         this.state = state || {};
         this.includes = includes || {};
+        this._widgetName = widgetName;
 
         this.subscribe = function (eName, cb, origin) {
             window.app.subscribe(eName, cb, origin);
@@ -484,9 +500,15 @@ var Widget = exports.Widget = function () {
                 });
             }
 
-            if (/for (.+?) in (.+?)\s(.+?)/mig.test(source)) return this.list(source, additional_scope, iternum);
-            if (/include:(.+?)/mig.test(source)) return this.include_with(source, additional_scope, iternum);
-            if (/rebuild:(.+?)/mig.test(source)) return this.rebuild(source, additional_scope, iternum);
+            // if (/{(.+?)}/mig.test(source)) {
+            //     source = source.replace(/\((.+?)\)/mig, (m,s) => {
+            //         return "(" + this.exp(s, additional_scope, iternum) + ")";
+            //     });
+            // }
+
+            if (/^for (.+?) in (.+?)\s(.+?)$/mig.test(source)) return this.list(source, additional_scope, iternum);
+            if (/^include:(.+?)$/mig.test(source)) return this.include_with(source, additional_scope, iternum);
+            if (/^rebuild:(.+?)$/mig.test(source)) return this.rebuild(source, additional_scope, iternum);
             if (/(.+?)\?(.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
 
             var seps = ["&&", "||", "==", "!=", " < ", " > ", ">=", "<="];
@@ -564,7 +586,7 @@ var Widget = exports.Widget = function () {
                 }
             }
 
-            value = this.escape(value);
+            //value = this.escape(value);
 
             if (filter) {
                 var _filter$match = filter.match(/(?:.+?)\((.*?)\)$/),
@@ -689,19 +711,22 @@ var Widget = exports.Widget = function () {
     }, {
         key: "include",
         value: function include(expression, additional_scope, iternum) {
-
             expression = expression.replace("include:", "").trim();
 
             if (expression.indexOf("$") == 0) expression = this.extract(expression);
 
-            var t = this.internal.includes[expression];
+            var t = this.internal.includes[expression] || this.app.global_includes[expression];
 
-            if (t.uid instanceof Function || t instanceof Array) {
+            if (t && t.uid instanceof Function || t instanceof Array) {
                 t = this.internal._includes[expression];
             }
 
             if (!t) {
-                require(expression);
+                try {
+                    t = require(expression);
+                } catch (Exception) {
+                    throw new WidgetNotFoundError("widget '" + expression + "' not found. Check internal.includes property of '" + this.internal._widgetName + "' widget");
+                }
             }
 
             var widget = this.app.compile(t, Object.assign({}, this.app.deepClone(this.internal.state), additional_scope));
@@ -762,6 +787,14 @@ var Widget = exports.Widget = function () {
                 _expression$match6 = _slicedToArray(_expression$match5, 3),
                 template = _expression$match6[1],
                 data = _expression$match6[2];
+
+            data = JSON.parse(data);
+
+            for (var item in data) {
+                var scope = Object.assign({}, this.app.deepClone(this.internal.state), additional_scope);
+                data[item] = this.exp(data[item]);
+            }
+            data = JSON.stringify(data);
 
             return this.include(template, this.scope(data, additional_scope, iternum), iternum);
         }
@@ -1047,4 +1080,14 @@ String.prototype.trimAll = function (mask) {
     return s;
 };
 
-},{}]},{},[1]);
+function UnbalancedBracketsError(message) {
+    this.message = message || "";
+}
+UnbalancedBracketsError.prototype = new Error();
+
+function WidgetNotFoundError(message) {
+    this.message = message || "";
+}
+WidgetNotFoundError.prototype = new Error();
+
+},{}]},{},[3]);
