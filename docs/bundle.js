@@ -39,7 +39,9 @@ new _Application.Application({
     "/about/features": require("./pages/About/Features"),
     "/docs/": require("./pages/Docs"),
     "/contact/": require("./pages/Contact")
-}, {}, {
+}, {
+    "baseDir": "/suit2"
+}, {
     "bootstrap": require("./layouts/bootstrap"),
     "topMenu": require("./blocks/topMenu"),
     "aboutMenu": require("./blocks/aboutMenu"),
@@ -940,19 +942,21 @@ var ControllerFactory = function () {
 }();
 
 var StrategyFactory = exports.StrategyFactory = function () {
-    function StrategyFactory() {
+    function StrategyFactory(app) {
         _classCallCheck(this, StrategyFactory);
+
+        this.app = app;
     }
 
     _createClass(StrategyFactory, [{
         key: "getStrategy",
         value: function getStrategy() {
             try {
-                if (location.protocol == "file:") return new HashStrategy();
-                if (location.protocol == "http:") return new PathStrategy();
-                if (location.protocol == "https:") return new PathStrategy();
+                if (location.protocol == "file:") return new HashStrategy(this.app);
+                if (location.protocol == "http:") return new PathStrategy(this.app);
+                if (location.protocol == "https:") return new PathStrategy(this.app);
             } catch (Error) {}
-            return new HashStrategy();
+            return new HashStrategy(this.app);
         }
     }]);
 
@@ -965,8 +969,10 @@ var StrategyFactory = exports.StrategyFactory = function () {
 
 
 var HashStrategy = exports.HashStrategy = function () {
-    function HashStrategy() {
+    function HashStrategy(app) {
         _classCallCheck(this, HashStrategy);
+
+        this.app = app;
     }
 
     _createClass(HashStrategy, [{
@@ -976,7 +982,7 @@ var HashStrategy = exports.HashStrategy = function () {
         }
     }, {
         key: "onClick",
-        value: function onClick(event, cb) {
+        value: function onClick(event, cb, app) {
             var href = event.target.href;
             href = href.replace("file://", "");
             var prev = location.hash;
@@ -999,19 +1005,21 @@ var HashStrategy = exports.HashStrategy = function () {
 
 
 var PathStrategy = exports.PathStrategy = function () {
-    function PathStrategy() {
+    function PathStrategy(app) {
         _classCallCheck(this, PathStrategy);
+
+        this.app = app;
     }
 
     _createClass(PathStrategy, [{
         key: "getCurrentLocation",
         value: function getCurrentLocation() {
-            return location.pathname || "/";
+            return (this.app.config["baseDir"] || "") + (location.pathname || "/");
         }
     }, {
         key: "onClick",
-        value: function onClick(event, cb) {
-            var href = event.target.pathname;
+        value: function onClick(event, cb, app) {
+            var href = (this.app.config["baseDir"] || "") + event.target.pathname;
             history.pushState({}, '', href);
             try {
                 cb();

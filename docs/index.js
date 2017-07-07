@@ -9,7 +9,9 @@ new Application(
         "/docs/": require("./pages/Docs"),
         "/contact/": require("./pages/Contact")
     },
-    {},
+    {
+        "baseDir": "/suit2"
+    },
     {
         "bootstrap": require("./layouts/bootstrap"),
         "topMenu": require("./blocks/topMenu"),

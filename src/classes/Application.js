@@ -610,13 +610,16 @@ class ControllerFactory {
 }
 
 export class StrategyFactory {
+    constructor(app) {
+        this.app = app;
+    }
     getStrategy() {
         try {
-            if (location.protocol == "file:") return new HashStrategy();
-            if (location.protocol == "http:") return new PathStrategy();
-            if (location.protocol == "https:") return new PathStrategy();
+            if (location.protocol == "file:") return new HashStrategy(this.app);
+            if (location.protocol == "http:") return new PathStrategy(this.app);
+            if (location.protocol == "https:") return new PathStrategy(this.app);
         } catch (Error) {}
-        return new HashStrategy();
+        return new HashStrategy(this.app);
     }
 }
 
@@ -624,10 +627,13 @@ export class StrategyFactory {
  * Strategy for navigation based on location.hash
  */
 export class HashStrategy {
+    constructor(app) {
+        this.app = app;
+    }
     getCurrentLocation() {
         return (location.hash || "/").replace("#", "");
     }
-    onClick(event, cb) {
+    onClick(event, cb, app) {
         var href = event.target.href;
         href = href.replace("file://", "");
         var prev = location.hash;
@@ -645,11 +651,14 @@ export class HashStrategy {
  * Strategy for navigation based on location.href
  */
 export class PathStrategy {
-    getCurrentLocation() {
-        return (location.pathname || "/");
+    constructor(app) {
+        this.app = app;
     }
-    onClick(event, cb) {
-        var href = event.target.pathname;
+    getCurrentLocation() {
+        return (this.app.config["baseDir"] || "") + (location.pathname || "/");
+    }
+    onClick(event, cb, app) {
+        var href = (this.app.config["baseDir"] || "") + event.target.pathname;
         history.pushState({}, '', href);
         try {
             cb();
