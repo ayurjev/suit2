@@ -611,11 +611,12 @@ class ControllerFactory {
 
 export class StrategyFactory {
     getStrategy() {
-        if (location.protocol == "file:") return new HashStrategy();
-        if (location.protocol == "http:") return new PathStrategy();
-        if (location.protocol == "https:") return new PathStrategy();
-
-        return HashStrategy();
+        try {
+            if (location.protocol == "file:") return new HashStrategy();
+            if (location.protocol == "http:") return new PathStrategy();
+            if (location.protocol == "https:") return new PathStrategy();
+        } catch (Error) {}
+        return new HashStrategy();
     }
 }
 
