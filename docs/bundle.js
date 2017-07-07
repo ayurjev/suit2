@@ -171,7 +171,7 @@ var Application = function () {
         this.instances = {};
         this.subscriptions = {};
         this.uids_cache = {};
-        this.router.strategy = this.router.strategy || new StrategyFactory().getStrategy();
+        this.router.strategy = this.router.strategy || new StrategyFactory(this).getStrategy();
         this.controllerFactory = new ControllerFactory(this.router);
         this.global_includes = includes || {};
         this.initDomListeners();
@@ -1014,7 +1014,7 @@ var PathStrategy = exports.PathStrategy = function () {
     _createClass(PathStrategy, [{
         key: "getCurrentLocation",
         value: function getCurrentLocation() {
-            return (this.app.config["baseDir"] || "") + (location.pathname || "/");
+            return (location.pathname || "/").replace(this.app.config["baseDir"] || "", "");
         }
     }, {
         key: "onClick",
