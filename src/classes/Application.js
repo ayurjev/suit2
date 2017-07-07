@@ -10,7 +10,7 @@ export class Application {
         this.instances = {};
         this.subscriptions = {};
         this.uids_cache = {};
-        this.router.strategy = this.router.strategy || new HashStrategy();
+        this.router.strategy = this.router.strategy || new StrategyFactory().getStrategy();
         this.controllerFactory = new ControllerFactory(this.router);
         this.global_includes = includes || {};
         this.initDomListeners();
@@ -25,7 +25,7 @@ export class Application {
 
                 document.body.addEventListener("click", (event) => {
                     if (event.target.tagName.toLowerCase() == "a") {
-                        this.router.strategy.onClick(event);
+                        this.router.strategy.onClick(event, () => { this.load(); });
                         event.preventDefault();
                     }
                 });
@@ -609,6 +609,15 @@ class ControllerFactory {
     }
 }
 
+export class StrategyFactory {
+    getStrategy() {
+        if (location.protocol == "file:") return new HashStrategy();
+        if (location.protocol == "http:") return new PathStrategy();
+        if (location.protocol == "https:") return new PathStrategy();
+
+        return HashStrategy();
+    }
+}
 
 /**
  * Strategy for navigation based on location.hash
@@ -617,13 +626,32 @@ export class HashStrategy {
     getCurrentLocation() {
         return (location.hash || "/").replace("#", "");
     }
-    onClick(event) {
+    onClick(event, cb) {
         var href = event.target.href;
-        if (location.protocol == "file:" && href.indexOf("file://") == 0) href = href.replace("file://", "");
+        href = href.replace("file://", "");
         location.hash = href;
     }
 }
 
+/**
+ * Strategy for navigation based on location.href
+ */
+export class PathStrategy {
+    getCurrentLocation() {
+        return (location.pathname || "/");
+    }
+    onClick(event, cb) {
+        var href = event.target.pathname;
+        history.pushState({}, '', href);
+        try {
+            cb();
+        } catch (Error) {
+            history.back();
+            cb();
+        }
+
+    }
+}
 
 /**
  * Filters for variables
