@@ -630,7 +630,14 @@ export class HashStrategy {
     onClick(event, cb) {
         var href = event.target.href;
         href = href.replace("file://", "");
+        var prev = location.hash;
         location.hash = href;
+        try {
+            cb();
+        } catch(Error) {
+            location.hash = prev;
+            cb();
+        }
     }
 }
 

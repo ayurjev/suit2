@@ -19,6 +19,6 @@
   },
   "scripts": {
     "test": "mocha --compilers js:babel-register --require babel-polyfill",
-    "build": "browserify src/app/index.js -o src/app/bundle.js"
+    "build": "browserify docs/index.js -o docs/bundle.js"
   }
 }
