@@ -271,34 +271,19 @@ describe('Application', () => {
         assert.equal('PREFIX-REBASED-CONTENT-SUFFIX-ENDING', rebasedWidget.render());
     });
 
-    it('should support rebuild syntax2', () => {
+    it('should support rebuild syntax with curly braces instead of quotes', () => {
         let c = new Application();
 
         let baseTemplate = {
             "template": `PREFIX-{$content || DEFAULT-CONTENT}-SUFFIX-{$fixed || ENDING}`
         }
 
-        let baseWidget = c.compile(
-            {template: `{include:base_template}`}, {}, {
-                "base_template": baseTemplate
-            }
-        );
-
-        assert.equal('PREFIX-DEFAULT-CONTENT-SUFFIX-ENDING', baseWidget.render());
-
         let rebasedWidget = c.compile(
-            {template: `{rebuild:base_template with {"content": "REBASED-CONTENT", "blablatag": "222"}}`}, {}, {
+            {template: `{rebuild:base_template with {content:REBASED-CONTENT}, {blablatag:222}}`}, {}, {
                 "base_template": baseTemplate
             }
         );
         assert.equal('PREFIX-REBASED-CONTENT-SUFFIX-ENDING', rebasedWidget.render());
-
-
-        let finalWidget = c.compile(
-            {template: `{include:rebasedWidget}`}, {}, {
-                "rebasedWidget": rebasedWidget
-            }
-        );
     });
 
 

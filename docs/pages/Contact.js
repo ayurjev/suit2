@@ -1,8 +1,10 @@
-export let name = 'ContactPage';
 
-export let template = `
-    {
-        rebuild:bootstrap with {
+import {Internal} from "../../src/classes/Application";
+
+
+export default class ContactPage extends Internal {
+    template() {
+        return `{rebuild:bootstrap with {
             "content": "
                 <p>
                     Github: <a href='https://github.com/ayurjev/suit2'>https://github.com/ayurjev/suit2</a>
@@ -11,17 +13,14 @@ export let template = `
                     Contact me: <a href='mailto:$email'>$email</a>
                 </p>
             "
+        }}`
+    }
+    init() {
+        this.state.caption = `Contact me`;
+
+        this.api.createListeners = () => {
+            this.state.email = "andrey.yurjev@gmail.com";
+            this.refresh();
         }
     }
-`;
-
-
-export let init = function(internal) {
-
-    internal.state.caption = `Contact me`;
-
-    internal.api.createListeners = function() {
-        internal.state.email = "andrey.yurjev@gmail.com";
-        internal.refresh();
-    }
-};
+}

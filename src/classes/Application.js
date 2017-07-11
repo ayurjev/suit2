@@ -126,13 +126,19 @@ export class Application {
     compile(t, state, includes) {
         var uid = this.generateUID(t);
         var prev_state = this.instances[uid] ? this.instances[uid].internal.state : {};
-        var internal = new Internal(uid, Object.assign(prev_state, state), includes, t.name);
-
-        if (t.init) t.init(internal);
-
         var template;
-        try                     { if (window) { template = '<widget id="' + uid + '">'+t.template+'</widget>'; }}
-        catch (ReferenceError)  { template = t.template; }
+
+        if (t.default){
+            internal = new t.default(uid, Object.assign(prev_state, state), includes);
+            internal.init();
+            try                     { if (window) { template = '<widget id="' + uid + '">'+internal.template()+'</widget>'; }}
+            catch (ReferenceError)  { template = internal.template(); }
+        } else {
+            var internal = new Internal(uid, Object.assign(prev_state, state), includes)
+            if (t.init) t.init(internal);
+            try                     { if (window) { template = '<widget id="' + uid + '">'+t.template+'</widget>'; }}
+            catch (ReferenceError)  { template = t.template; }
+        }
 
         template = template.replace(/\s\s+/mig, " ").trim();
 
@@ -225,7 +231,7 @@ export class Application {
 /**
  *  Internal Represention of Widget
  */
-class Internal {
+export class Internal {
 
     constructor(uid, state, includes, widgetName) {
         this.uid = uid;
@@ -241,6 +247,10 @@ class Internal {
         this.subscribe = (eName, cb, origin) => { window.app.subscribe(eName, cb, origin); }
         this.broadcast = (eName, message) => { window.app.broadcast(eName, message, this.api); }
     }
+
+    init() {}
+    template() {}
+
 
     /**
      * Refreshing widget in DOM
@@ -530,7 +540,15 @@ export class Widget {
     rebuild(expression, additional_scope, iternum) {
         let [,template,data] = expression.match(/rebuild:(.+?) with\s(.+?)$/);
 
-        data = JSON.parse(data);
+        try {
+            data = JSON.parse(data);
+        } catch (e) {
+            var parsedData = {};
+            data.replace(/{(.+?):(.+?)}/ig, (match, key, content) => {
+                parsedData[key] = content;
+            });
+            data = parsedData;
+        }
 
         for (var item in data) {
             var scope = Object.assign({}, this.app.deepClone(this.internal.state), additional_scope)

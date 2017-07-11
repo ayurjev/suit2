@@ -57,91 +57,221 @@ Object.defineProperty(exports, "__esModule", {
 var template = exports.template = "\n\t<div class=\"wrapper\">\n\t\t<header>\n\t\t\t<h1><a href=\"/\">Suit</a></h1>\n\t\t\t{include:topMenu}\n\t\t\t{$submenu || \"\"}\n\t\t</header>\n\t\t<section>\n            <h1 class=\"post-title\">{$caption}</h1>\n\t\t\t<br />\n            {$content || DEFAULT-CONTENT}\n        </section>\n    </div>\n";
 
 },{}],6:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-var name = exports.name = 'FeaturesPage';
-
-var template = exports.template = '\n    {\n        rebuild:bootstrap with {\n            "submenu": "include:aboutMenu"\n        }\n    }\n';
-
-var init = exports.init = function init(internal) {
-
-    internal.state.caption = 'Features & Ideas';
-    internal.state.content = '\n        <ul>\n            <li>ES6 compatible</li>\n            <li>Freaking lightweight and compact runtime (24kb raw lib)</li>\n            <li>No runtime dependencies (dev-dependencies only)</li>\n            <li>Component-oriented approach (incapsulation)</li>\n            <li>Event-driven approach (pub/sub model)</li>\n            <li>Single-state (app wide) or Local-state (component wide)</li>\n            <li>Built-in and very simple router</li>\n            <li>Great support for static sites (file:// protocol supported)</li>\n            <li>No auto-refreshing of the DOM (manual, on purpose)</li>\n            <li>State mutations allowed</li>\n            <li>No requirements for the project structure</li>\n            <li>Any approach for the CSS</li>\n            <li>No props (child component inherits parent\'s state)</li>\n\n            <li class=\'future\'>Automated assignment of \'.active\' for the "a" tags (optional)</li>\n            <li class=\'future\'>Built-in tool for ajax-requests (optional)\n            <li class=\'future\'>Server-side rendering support (optional)</li>\n            <li class=\'future\'>Bundle.js sharding (optional)</li>\n            <li class=\'future\'>Component-only styles (optional)</li>\n        </ul>\n    ';
-};
-
-},{}],7:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-var name = exports.name = 'MotivationPage';
-
-var template = exports.template = '\n    {\n        rebuild:bootstrap with {\n            "submenu": "include:aboutMenu"\n        }\n    }\n';
-
-var init = exports.init = function init(internal) {
-
-    internal.state.caption = 'Why?';
-
-    internal.state.content = '\n        <p>\n            I have worked a lot with different kind of frameworks and libraries in order to find a way to build modern web-applications with ease and comfort... Even though there is a huge amount of options - I failed to find the right one.\n        </p>\n\n        <p>\n            Yes, I\'ve built plenty of web-applications using all of those technologies that I tried on my way, but I didn\'t found a combination of flexibility and straightforwardness I was looking for...\n        </p>\n\n        <p>\n            I needed a tool, that would be as powerfull as "react+redux+some kind of router" (but not that sophisticated) or as powerfull as angular (but not that verbose and opinionated).\n        </p>\n\n        <p>\n            So, I decided to build it myself. Why not? At least it should\'ve been fun and much more interesting than my regular work at the time...\n        </p>\n\n        <p>\n            I decided to take everything that seemed to me as a good idea from other tools I learned, but get rid of any kind of complexity or syntax uglyness...\n        </p>\n\n        <p>\n            I know, that "Suit" may lack a lot of things because of absence of that complexity, but this way it gained a great benefit - simplicity.\n        </p>\n\n        <p>\n            P.S. This particular website is built with "Suit" while "Suit" was under development and testing, this was my approach to try it myself before demonstrating it to other people.\n        </p>\n    ';
-};
-
-},{}],8:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-var name = exports.name = 'ContactPage';
 
-var template = exports.template = "\n    {\n        rebuild:bootstrap with {\n            \"content\": \"\n                <p>\n                    Github: <a href='https://github.com/ayurjev/suit2'>https://github.com/ayurjev/suit2</a>\n                </p>\n                <p>\n                    Contact me: <a href='mailto:$email'>$email</a>\n                </p>\n            \"\n        }\n    }\n";
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var init = exports.init = function init(internal) {
+var _Application = require("../../../src/classes/Application");
 
-    internal.state.caption = "Contact me";
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-    internal.api.createListeners = function () {
-        internal.state.email = "andrey.yurjev@gmail.com";
-        internal.refresh();
-    };
-};
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
-},{}],9:[function(require,module,exports){
-'use strict';
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var FeaturesPage = function (_Internal) {
+    _inherits(FeaturesPage, _Internal);
+
+    function FeaturesPage() {
+        _classCallCheck(this, FeaturesPage);
+
+        return _possibleConstructorReturn(this, (FeaturesPage.__proto__ || Object.getPrototypeOf(FeaturesPage)).apply(this, arguments));
+    }
+
+    _createClass(FeaturesPage, [{
+        key: "template",
+        value: function template() {
+            return "{rebuild:bootstrap with {\n            \"submenu\": \"include:aboutMenu\",\n            \"caption\": \"Features & Ideas\",\n            \"content\": \"\n                <ul>\n                    <li>ES6 compatible</li>\n                    <li>Freaking lightweight and compact runtime (24kb raw lib)</li>\n                    <li>No runtime dependencies (dev-dependencies only)</li>\n                    <li>Component-oriented approach (incapsulation)</li>\n                    <li>Event-driven approach (pub/sub model)</li>\n                    <li>Single-state (app wide) or Local-state (component wide)</li>\n                    <li>Built-in and very simple router</li>\n                    <li>Great support for static sites (file:// protocol supported)</li>\n                    <li>No auto-refreshing of the DOM (manual, on purpose)</li>\n                    <li>State mutations allowed</li>\n                    <li>No requirements for the project structure</li>\n                    <li>Any approach for the CSS</li>\n                    <li>No props (child component inherits parent's state)</li>\n\n                    <li class='future'>Automated assignment of '.active' for the 'a' tags (optional)</li>\n                    <li class='future'>Built-in tool for ajax-requests (optional)\n                    <li class='future'>Server-side rendering support (optional)</li>\n                    <li class='future'>Bundle.js sharding (optional)</li>\n                    <li class='future'>Component-only styles (optional)</li>\n                </ul>\n            \"\n        }}";
+        }
+    }]);
+
+    return FeaturesPage;
+}(_Application.Internal);
+
+exports.default = FeaturesPage;
+;
+
+},{"../../../src/classes/Application":11}],7:[function(require,module,exports){
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-var name = exports.name = 'DocsPage';
 
-var template = exports.template = '\n    {\n        rebuild:bootstrap with {\n            "submenu": "include:docsMenu"\n        }\n    }\n';
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var init = exports.init = function init(internal) {
+var _Application = require("../../../src/classes/Application");
 
-    internal.state.caption = 'Documentation';
-    internal.state.content = '\n        <p>\n            Under development\n        </p>\n    ';
-};
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-},{}],10:[function(require,module,exports){
-'use strict';
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var MotivationPage = function (_Internal) {
+    _inherits(MotivationPage, _Internal);
+
+    function MotivationPage() {
+        _classCallCheck(this, MotivationPage);
+
+        return _possibleConstructorReturn(this, (MotivationPage.__proto__ || Object.getPrototypeOf(MotivationPage)).apply(this, arguments));
+    }
+
+    _createClass(MotivationPage, [{
+        key: "template",
+        value: function template() {
+            return "{\n            rebuild:bootstrap with {\n                \"submenu\": \"include:aboutMenu\",\n                \"caption\": \"Why?\",\n                \"content\": \"\n                    <p>\n                        I have worked a lot with different kind of frameworks and libraries in order to find a way to build modern web-applications with ease and comfort... Even though there is a huge amount of options - I failed to find the right one.\n                    </p>\n\n                    <p>\n                        Yes, I've built plenty of web-applications using all of those technologies that I tried on my way, but I didn't found a combination of flexibility and straightforwardness I was looking for...\n                    </p>\n\n                    <p>\n                        I needed a tool, that would be as powerfull as \"react+redux+some kind of router\" (but not that sophisticated) or as powerfull as angular (but not that verbose and opinionated).\n                    </p>\n\n                    <p>\n                        So, I decided to build it myself. Why not? At least it should've been fun and much more interesting than my regular work at the time...\n                    </p>\n\n                    <p>\n                        I decided to take everything that seemed to me as a good idea from other tools I learned, but get rid of any kind of complexity or syntax uglyness...\n                    </p>\n\n                    <p>\n                        I know, that \"Suit\" may lack a lot of things because of absence of that complexity, but this way it gained a great benefit - simplicity.\n                    </p>\n\n                    <p>\n                        P.S. This particular website is built with \"Suit\" while \"Suit\" was under development and testing, this was my approach to try it myself before demonstrating it to other people.\n                    </p>\n                \"\n            }\n        }";
+        }
+    }]);
+
+    return MotivationPage;
+}(_Application.Internal);
+
+exports.default = MotivationPage;
+
+},{"../../../src/classes/Application":11}],8:[function(require,module,exports){
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-var name = exports.name = 'TitlePage';
 
-var template = exports.template = '\n    {\n        rebuild:bootstrap with {\n            "submenu": "include:aboutMenu"\n        }\n    }\n';
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var init = exports.init = function init(internal) {
+var _Application = require("../../src/classes/Application");
 
-    internal.state.caption = 'Freaking-simple microframework for building modern web-applications...';
-    internal.state.content = '\n        <p>\n            Designed to be be as powerfull as "react+redux+some kind of router" (but not that sophisticated) or as powerfull as angular (but not that verbose and opinionated).\n        </p>\n    ';
-};
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-},{}],11:[function(require,module,exports){
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var ContactPage = function (_Internal) {
+    _inherits(ContactPage, _Internal);
+
+    function ContactPage() {
+        _classCallCheck(this, ContactPage);
+
+        return _possibleConstructorReturn(this, (ContactPage.__proto__ || Object.getPrototypeOf(ContactPage)).apply(this, arguments));
+    }
+
+    _createClass(ContactPage, [{
+        key: "template",
+        value: function template() {
+            return "{rebuild:bootstrap with {\n            \"content\": \"\n                <p>\n                    Github: <a href='https://github.com/ayurjev/suit2'>https://github.com/ayurjev/suit2</a>\n                </p>\n                <p>\n                    Contact me: <a href='mailto:$email'>$email</a>\n                </p>\n            \"\n        }}";
+        }
+    }, {
+        key: "init",
+        value: function init() {
+            var _this2 = this;
+
+            this.state.caption = "Contact me";
+
+            this.api.createListeners = function () {
+                _this2.state.email = "andrey.yurjev@gmail.com";
+                _this2.refresh();
+            };
+        }
+    }]);
+
+    return ContactPage;
+}(_Application.Internal);
+
+exports.default = ContactPage;
+
+},{"../../src/classes/Application":11}],9:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _Application = require("../../src/classes/Application");
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var DocsPage = function (_Internal) {
+    _inherits(DocsPage, _Internal);
+
+    function DocsPage() {
+        _classCallCheck(this, DocsPage);
+
+        return _possibleConstructorReturn(this, (DocsPage.__proto__ || Object.getPrototypeOf(DocsPage)).apply(this, arguments));
+    }
+
+    _createClass(DocsPage, [{
+        key: "template",
+        value: function template() {
+            return "{\n            rebuild:bootstrap with {\n                \"submenu\": \"include:docsMenu\"\n            }\n        }";
+        }
+    }, {
+        key: "init",
+        value: function init() {
+            this.state.caption = "Documentation";
+            this.state.content = "<p>Under development</p>";
+        }
+    }]);
+
+    return DocsPage;
+}(_Application.Internal);
+
+exports.default = DocsPage;
+
+},{"../../src/classes/Application":11}],10:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _Application = require("../../src/classes/Application");
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var TitlePage = function (_Internal) {
+    _inherits(TitlePage, _Internal);
+
+    function TitlePage() {
+        _classCallCheck(this, TitlePage);
+
+        return _possibleConstructorReturn(this, (TitlePage.__proto__ || Object.getPrototypeOf(TitlePage)).apply(this, arguments));
+    }
+
+    _createClass(TitlePage, [{
+        key: "template",
+        value: function template() {
+            return "{\n            rebuild:bootstrap with {\n                \"submenu\": \"include:aboutMenu\"\n            }\n        }";
+        }
+    }, {
+        key: "init",
+        value: function init() {
+            this.state.caption = "Freaking-simple microframework for building modern web-applications...";
+            this.state.content = "\n            <p>\n                Designed to be be as powerfull as \"react+redux+some kind of router\" (but not that sophisticated) or as powerfull as angular (but not that verbose and opinionated).\n            </p>\n        ";
+        }
+    }]);
+
+    return TitlePage;
+}(_Application.Internal);
+
+exports.default = TitlePage;
+
+},{"../../src/classes/Application":11}],11:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -309,17 +439,28 @@ var Application = function () {
         value: function compile(t, state, includes) {
             var uid = this.generateUID(t);
             var prev_state = this.instances[uid] ? this.instances[uid].internal.state : {};
-            var internal = new Internal(uid, Object.assign(prev_state, state), includes, t.name);
-
-            if (t.init) t.init(internal);
-
             var template;
-            try {
-                if (window) {
-                    template = '<widget id="' + uid + '">' + t.template + '</widget>';
+
+            if (t.default) {
+                internal = new t.default(uid, Object.assign(prev_state, state), includes);
+                internal.init();
+                try {
+                    if (window) {
+                        template = '<widget id="' + uid + '">' + internal.template() + '</widget>';
+                    }
+                } catch (ReferenceError) {
+                    template = internal.template();
                 }
-            } catch (ReferenceError) {
-                template = t.template;
+            } else {
+                var internal = new Internal(uid, Object.assign(prev_state, state), includes);
+                if (t.init) t.init(internal);
+                try {
+                    if (window) {
+                        template = '<widget id="' + uid + '">' + t.template + '</widget>';
+                    }
+                } catch (ReferenceError) {
+                    template = t.template;
+                }
             }
 
             template = template.replace(/\s\s+/mig, " ").trim();
@@ -442,7 +583,7 @@ var Application = function () {
 
 exports.Application = Application;
 
-var Internal = function () {
+var Internal = exports.Internal = function () {
     function Internal(uid, state, includes, widgetName) {
         var _this3 = this;
 
@@ -472,12 +613,18 @@ var Internal = function () {
         };
     }
 
-    /**
-     * Refreshing widget in DOM
-     */
-
-
     _createClass(Internal, [{
+        key: "init",
+        value: function init() {}
+    }, {
+        key: "template",
+        value: function template() {}
+
+        /**
+         * Refreshing widget in DOM
+         */
+
+    }, {
         key: "refresh",
         value: function refresh() {
             try {

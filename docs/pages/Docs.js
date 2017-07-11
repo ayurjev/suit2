@@ -1,20 +1,17 @@
-export let name = 'DocsPage';
 
-export let template = `
-    {
-        rebuild:bootstrap with {
-            "submenu": "include:docsMenu"
-        }
+import {Internal} from "../../src/classes/Application";
+
+
+export default class DocsPage extends Internal {
+    template() {
+        return `{
+            rebuild:bootstrap with {
+                "submenu": "include:docsMenu"
+            }
+        }`
     }
-`;
-
-
-export let init = function(internal) {
-
-    internal.state.caption = `Documentation`;
-    internal.state.content = `
-        <p>
-            Under development
-        </p>
-    `;
-};
+    init () {
+        this.state.caption = `Documentation`;
+        this.state.content = `<p>Under development</p>`;
+    }
+}
