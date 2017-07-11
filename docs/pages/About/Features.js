@@ -4,10 +4,10 @@ import {Internal} from "../../../src/classes/Application";
 
 export default class FeaturesPage extends Internal {
     template() {
-        return `{rebuild:bootstrap with {
-            "submenu": "include:aboutMenu",
-            "caption": "Features & Ideas",
-            "content": "
+        return `{rebuild:bootstrap with
+            {submenu: include:aboutMenu},
+            {caption: Features & Ideas"},
+            {content:
                 <ul>
                     <li>ES6 compatible</li>
                     <li>Freaking lightweight and compact runtime (24kb raw lib)</li>
@@ -29,7 +29,7 @@ export default class FeaturesPage extends Internal {
                     <li class='future'>Bundle.js sharding (optional)</li>
                     <li class='future'>Component-only styles (optional)</li>
                 </ul>
-            "
-        }}`
+            }
+        }`
     }
 };

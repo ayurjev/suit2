@@ -317,7 +317,7 @@ export class Widget {
         if (/^for (.+?) in (.+?)\s(.+?)$/mig.test(source)) return this.list(source, additional_scope, iternum);
         if (/^include:(.+?)$/mig.test(source)) return this.include_with(source, additional_scope, iternum);
         if (/^rebuild:(.+?)$/mig.test(source)) return this.rebuild(source, additional_scope, iternum);
-        if (/(.+?)\?(.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
+        if (/(.+?)\s\?\s(.+?)/mig.test(source)) return this.ternary(source, additional_scope, iternum);
 
         var seps = ["&&", "||", "==", "!=", " < ", " > ", ">=", "<="];
         for (var i=0; i < seps.length; i++) {
