@@ -1,14 +1,9 @@
 
-import {Internal} from "../../src/classes/Application";
+import {Component} from "../../src/classes/Component";
 
 
-export default class Variables extends Internal {
-    constructor() {
-        super();
-        this.api.initCode = this.initCode;
+export default class Variables extends Component {
 
-        
-    }
     template() {
         return `VARS!`
     }

@@ -119,11 +119,12 @@ export class Application {
     generateUID(t) {
         // TODO: it is not good idea to use the whole temlate as a key...
         // We should use a hash, but there is no md5 function in raw js
-        if (this.uids_cache[t.toString()]) return this.uids_cache[t.toString()];
+        var obj = t.default || t;
+        if (this.uids_cache[obj.toString()]) return this.uids_cache[obj.toString()];
         else {
             var p = () => { return ("000" + ((Math.random() * 46656) | 0).toString(36)).slice(-3) };
             var uid = p() + p();
-            this.uids_cache[t.toString()] = uid;
+            this.uids_cache[obj.toString()] = uid;
             return uid;
         }
     }
@@ -161,11 +162,10 @@ export class Application {
         if (loadTarget) {
             document.body.innerHTML = loadTarget.render();
 
-            var widgets = [].slice.call(document.getElementsByTagName("widget"));
+            var components = [].slice.call(document.getElementsByTagName("component"));
 
-            widgets.forEach((widget) => {
-                var api = this.instances[widget.getAttribute("id")].getApi();
-                api.createListeners();
+            components.forEach((component) => {
+                this.instances[component.getAttribute("id")].createListeners();
             });
 
             /* Make links active or unactive automatically */

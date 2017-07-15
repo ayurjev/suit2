@@ -1,12 +1,12 @@
 
-import {Internal} from "../../../src/classes/Application";
+import {Component} from "../../../src/classes/Component";
 
 
-export default class FeaturesPage extends Internal {
+export default class FeaturesPage extends Component {
     template() {
         return `
-        {rebuild:bootstrap with
-            {submenu: include:aboutMenu},
+        {rebuild:Bootstrap with
+            {submenu: include:AboutMenu},
             {caption: Features & Ideas"},
             {content:
                 <ul>

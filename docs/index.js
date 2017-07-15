@@ -16,9 +16,9 @@ new Application(
         "baseDir": "/suit2"
     },
     {
-        "bootstrap": require("./layouts/bootstrap"),
-        "topMenu": require("./blocks/topMenu"),
-        "aboutMenu": require("./blocks/aboutMenu"),
-        "docsMenu": require("./blocks/docsMenu")
+        "Bootstrap": require("./layouts/Bootstrap"),
+        "TopMenu": require("./blocks/TopMenu"),
+        "AboutMenu": require("./blocks/AboutMenu"),
+        "DocsMenu": require("./blocks/DocsMenu")
     }
 )

@@ -1,11 +1,11 @@
 
-import {Internal} from "../../src/classes/Application";
+import {Component} from "../../src/classes/Component";
 
 
-export default class ContactPage extends Internal {
+export default class ContactPage extends Component {
     template() {
         return `{
-            rebuild:bootstrap with
+            rebuild:Bootstrap with
             {caption: Contact me},
             {content:
                 <p>

@@ -1,25 +1,21 @@
 
-import {Internal} from "../../src/classes/Application";
+import {Component} from "../../src/classes/Component";
 
 
-export default class DocsPage extends Internal {
-
-    constructor() {
-        super();
-        this.variables = this.widget(require("../articles/variables"));
-
-    }
+export default class DocsPage extends Component {
 
     template() {
         return `{
-            rebuild:bootstrap with {
-                "submenu": "include:docsMenu",
+            rebuild:Bootstrap with {
+                "submenu": "include:DocsMenu",
                 "caption": "Documentation"
             }
         }`
     }
 
     init () {
+        this.variables = this.component(require("../articles/Variables"));
+
         switch (this.state.request.subject) {
             case "variables":
                 this.state.content = this.variables.render();
