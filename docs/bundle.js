@@ -23,9 +23,7 @@ var Variables = function (_Internal) {
 
         var _this = _possibleConstructorReturn(this, (Variables.__proto__ || Object.getPrototypeOf(Variables)).call(this));
 
-        _this.api.init_code = function () {
-            return "code has been initiated";
-        };
+        _this.api.initCode = _this.initCode;
         return _this;
     }
 
@@ -33,6 +31,22 @@ var Variables = function (_Internal) {
         key: "template",
         value: function template() {
             return "VARS!";
+        }
+    }, {
+        key: "init",
+        value: function init() {
+            console.dir("code instantiated");
+        }
+    }, {
+        key: "createListeners",
+        value: function createListeners() {
+            alert("createListeners");
+            this.initCode();
+        }
+    }, {
+        key: "initCode",
+        value: function initCode() {
+            console.dir("code inited");
         }
     }]);
 
@@ -260,7 +274,6 @@ var DocsPage = function (_Internal) {
     }, {
         key: "init",
         value: function init() {
-            this.variables_api = this.includes.variables.api();
             switch (this.state.request.subject) {
                 case "variables":
                     this.state.content = this.includes.variables.render();
@@ -268,7 +281,6 @@ var DocsPage = function (_Internal) {
                 default:
                     this.state.content = "<p>Under development</p>";
             }
-            console.dir(this.variables_api.init_code());
         }
     }]);
 
@@ -493,7 +505,10 @@ var Application = function () {
 
             if (t.default) {
                 internal = new t.default();
+                console.dir(internal.api);
                 internal.initApi(internal.api);
+
+                console.dir(internal.api);
                 internal.setUID(uid);
                 internal.setState(Object.assign({}, prev_state || {}, state || {}, internal.state || {}));
                 internal.setIncludes(Object.assign({}, includes || {}, internal.includes || {}));
@@ -609,8 +624,20 @@ var Application = function () {
     }, {
         key: "loadTarget",
         value: function loadTarget(_loadTarget) {
+            var _this2 = this;
+
             if (_loadTarget) {
                 document.body.innerHTML = this.compileTarget(_loadTarget).render();
+
+                var widgets = [].slice.call(document.getElementsByTagName("widget"));
+
+                widgets.forEach(function (widget) {
+
+                    var api = _this2.instances[widget.getAttribute("id")].api();
+                    console.dir(api.uid());
+                    console.dir(api);
+                    api.createListeners();
+                });
 
                 /* Make links active or unactive automatically */
                 var links = [].slice.call(document.getElementsByTagName("a"));
@@ -707,6 +734,9 @@ var Internal = exports.Internal = function () {
     }
 
     _createClass(Internal, [{
+        key: "createListeners",
+        value: function createListeners() {}
+    }, {
         key: "tag",
         value: function tag() {
             try {
@@ -726,14 +756,17 @@ var Internal = exports.Internal = function () {
     }, {
         key: "initApi",
         value: function initApi(api) {
-            var _this2 = this;
+            var _this3 = this;
 
             this.api = Object.assign({
                 uid: function uid() {
-                    return _this2.uid;
+                    return _this3.uid;
                 },
                 init: function init() {
-                    _this2.init();
+                    _this3.init();
+                },
+                createListeners: function createListeners() {
+                    _this3.createListeners();
                 }
             }, api || {});
         }
@@ -831,7 +864,7 @@ var Widget = exports.Widget = function () {
     }, {
         key: "exp",
         value: function exp(source, additional_scope, iternum) {
-            var _this3 = this;
+            var _this4 = this;
 
             try {
                 source = source.trim();
@@ -841,7 +874,7 @@ var Widget = exports.Widget = function () {
 
             if (/\((.+?)\)/mig.test(source)) {
                 source = source.replace(/\((.+?)\)/mig, function (m, s) {
-                    return "(" + _this3.exp(s, additional_scope, iternum) + ")";
+                    return "(" + _this4.exp(s, additional_scope, iternum) + ")";
                 });
             }
 

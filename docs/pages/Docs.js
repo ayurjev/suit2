@@ -21,7 +21,6 @@ export default class DocsPage extends Internal {
     }
 
     init () {
-        this.variables_api = this.includes.variables.api();
         switch (this.state.request.subject) {
             case "variables":
                 this.state.content = this.includes.variables.render();
@@ -29,6 +28,5 @@ export default class DocsPage extends Internal {
             default:
                 this.state.content = `<p>Under development</p>`;
         }
-        console.dir(this.variables_api.init_code());
     }
 }

@@ -130,7 +130,10 @@ export class Application {
 
         if (t.default){
             internal = new t.default();
+            console.dir(internal.api);
             internal.initApi(internal.api);
+
+            console.dir(internal.api);
             internal.setUID(uid);
             internal.setState(Object.assign({}, prev_state || {}, state || {}, internal.state || {}));
             internal.setIncludes(Object.assign({}, includes || {}, internal.includes || {}));
@@ -233,6 +236,16 @@ export class Application {
         if (loadTarget) {
             document.body.innerHTML = this.compileTarget(loadTarget).render();
 
+            var widgets = [].slice.call(document.getElementsByTagName("widget"));
+
+            widgets.forEach((widget) => {
+
+                var api = this.instances[widget.getAttribute("id")].api();
+                console.dir(api.uid());
+                console.dir(api);
+                api.createListeners();
+            });
+
             /* Make links active or unactive automatically */
             var links = [].slice.call(document.getElementsByTagName("a"));
             var currentLocation = this.router.strategy.getCurrentLocation().trimAll("/").split("/");
@@ -307,6 +320,8 @@ export class Internal {
         this.includes = {};
     }
 
+    createListeners() {}
+
     tag() {
         try { return document.getElementById(this.uid);  } catch (e) {}
     }
@@ -317,7 +332,8 @@ export class Internal {
     initApi(api) {
         this.api = Object.assign({
             uid: () => { return this.uid; },
-            init: () => { this.init(); }
+            init: () => { this.init(); },
+            createListeners: () => { this.createListeners(); }
         }, api || {});
     }
     setWidgetName(widgetName) {
