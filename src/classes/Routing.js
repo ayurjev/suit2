@@ -5,9 +5,10 @@
  */
 export class ControllerFactory {
 
-    constructor(router) {
+    constructor(app) {
+        this.app = app
         this.router = {};
-        for (var routePattern in router) { this.router[routePattern.trimAll("/")] = router[routePattern]; };
+        for (var routePattern in app.router) { this.router[routePattern.trimAll("/")] = app.router[routePattern]; };
     }
 
     /**
@@ -35,7 +36,8 @@ export class ControllerFactory {
         url = url.trimAll("/");
         // Fast Access Controller (full match)
         let fast_acs_controller = this.router[url];
-        if (fast_acs_controller != null) return {"controller": fast_acs_controller, "request": {}};
+        if (fast_acs_controller != null)
+        return this.app.component(fast_acs_controller, Object.assign({}, this.app.config, {"request": {}}));
 
         // Searching for best option:
         var best_controller = null;
@@ -53,7 +55,9 @@ export class ControllerFactory {
                 }
             }
         };
-        if (best_controller) return {"controller": best_controller, "request": best_controller_request};
+        if (best_controller) {
+            return this.app.component(best_controller, Object.assign({}, this.app.config, {"request": best_controller_request}));
+        }
         throw new Error("404 NotFound")
     }
 

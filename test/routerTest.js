@@ -5,7 +5,7 @@ import {Component} from "../src/classes/Component";
 
 
 describe('Router', () => {
-    
+
     class PageComponent extends Component {
         template() { return `page`; }
     }
@@ -28,10 +28,10 @@ describe('Router', () => {
         });
 
         assert.throws(() => { app.getLoadTarget("/") }, Error, "404 NotFound");
-        assert.equal(PageComponent, app.getLoadTarget("/page/").controller);
-        assert.equal(SubPageComponent, app.getLoadTarget("/page/subpage/").controller);
-        assert.equal(SubPageComponent, app.getLoadTarget("/page/subpage/andrey/").controller);
-        assert.equal(DigitComponent, app.getLoadTarget("/page2/").controller);
+        assert(app.getLoadTarget("/page/") instanceof PageComponent);
+        assert(app.getLoadTarget("/page/subpage/") instanceof SubPageComponent);
+        assert(app.getLoadTarget("/page/subpage/andrey/") instanceof SubPageComponent);
+        assert(app.getLoadTarget("/page2/") instanceof DigitComponent);
     });
 
 
@@ -46,10 +46,10 @@ describe('Router', () => {
 
         // but requested with trailing slashes:
         assert.throws(() => { app.getLoadTarget("/") }, Error, "404 NotFound");
-        assert.equal(PageComponent, app.getLoadTarget("/page/").controller);
-        assert.equal(SubPageComponent, app.getLoadTarget("/page/subpage/").controller);
-        assert.equal(SubPageComponent, app.getLoadTarget("/page/subpage/andrey/").controller);
-        assert.equal(DigitComponent, app.getLoadTarget("/page2/").controller);
+        assert(app.getLoadTarget("/page/") instanceof PageComponent);
+        assert(app.getLoadTarget("/page/subpage/") instanceof SubPageComponent);
+        assert(app.getLoadTarget("/page/subpage/andrey/") instanceof SubPageComponent);
+        assert(app.getLoadTarget("/page2/") instanceof DigitComponent);
 
         // routes are defined with trailing slashes:
         let app2 = new Application({
@@ -61,11 +61,11 @@ describe('Router', () => {
         });
 
         // but requested without:
-        assert.equal(PageComponent, app2.getLoadTarget("/").controller);
-        assert.equal(PageComponent, app2.getLoadTarget("/page").controller);
-        assert.equal(SubPageComponent, app2.getLoadTarget("/page/subpage").controller);
-        assert.equal(SubPageComponent, app2.getLoadTarget("/page/subpage/andrey").controller);
-        assert.equal(DigitComponent, app2.getLoadTarget("/page2").controller);
+        assert(app2.getLoadTarget("/") instanceof PageComponent);
+        assert(app2.getLoadTarget("/page") instanceof PageComponent);
+        assert(app2.getLoadTarget("/page/subpage") instanceof SubPageComponent);
+        assert(app2.getLoadTarget("/page/subpage/andrey") instanceof SubPageComponent);
+        assert(app2.getLoadTarget("/page2") instanceof DigitComponent);
     });
 
 
@@ -75,16 +75,16 @@ describe('Router', () => {
             "/page/subpage/<anything>/": PageComponent,
             "/page/<subpage>/<anything>/": SubPageComponent,
         });
-        assert.equal(PageComponent, app1.getLoadTarget("/page/subpage/anything").controller);
-        assert.equal(SubPageComponent, app1.getLoadTarget("/page/anything/anything/").controller);
+        assert(app1.getLoadTarget("/page/subpage/anything") instanceof PageComponent);
+        assert(app1.getLoadTarget("/page/anything/anything/") instanceof SubPageComponent);
 
         // wrong order:
         let app2 = new Application({
             "/page/<subpage>/<anything>/": SubPageComponent,
             "/page/subpage/<anything>/": PageComponent,
         });
-        assert.equal(PageComponent, app2.getLoadTarget("/page/subpage/anything").controller);
-        assert.equal(SubPageComponent, app2.getLoadTarget("/page/anything/anything/").controller);
+        assert(app2.getLoadTarget("/page/subpage/anything") instanceof PageComponent);
+        assert(app2.getLoadTarget("/page/anything/anything/") instanceof SubPageComponent);
     });
 
 
@@ -109,8 +109,7 @@ describe('Router', () => {
             "/page/<subpage>/<anything>/": Module2,
         });
 
-        let target = app.getLoadTarget("/page/");
-        let component = app.compileTarget(target);
+        let component = app.getLoadTarget("/page/");
 
         assert.equal("<a>page</a>", component.render())
         assert.deepEqual({"action": "page"}, component.getApi().returnRequest());

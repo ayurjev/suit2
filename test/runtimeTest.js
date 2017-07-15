@@ -32,7 +32,7 @@ describe('Component', () => {
             }
         }
 
-        let component = app.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert(component.getApi()["init"] instanceof Function);
         assert(component.getApi()["uid"] instanceof Function);
@@ -53,7 +53,7 @@ describe('Component', () => {
             }
         }
 
-        let component = app.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         // check component's api:
         assert(component.getApi()["init"] instanceof Function);
@@ -71,7 +71,7 @@ describe('Component', () => {
         assert.equal('His name is <b>Andrey</b> and he is 28 years old', component.render());
     });
 
-    it('should share state between components if compiler configured to work with shared state', () => {
+    it('should share state between components if componentr configured to work with shared state', () => {
         let sharedStateApp = new Application({}, {state: "shared"});
 
         class TestComponent extends Component {
@@ -91,12 +91,12 @@ describe('Component', () => {
                 };
 
                 this.api.change_child = () => {
-                    this.includes.test_inclusion.api.change("Nikolay", 32);
+                    this.includes.test_inclusion.getApi().change("Nikolay", 32);
                 };
             }
         }
 
-        let component = sharedStateApp.compile(TestComponent);
+        let component = sharedStateApp.component(TestComponent);
 
         // no state at all:
         assert.equal(
@@ -125,7 +125,7 @@ describe('Component', () => {
         );
     });
 
-    it('should NOT share state between components if compiler configured to work with local state', () => {
+    it('should NOT share state between components if componentr configured to work with local state', () => {
         let localStateApp = new Application({}, {state: "local"});
 
         class TestComponent extends Component {
@@ -143,7 +143,7 @@ describe('Component', () => {
                 }
 
                 this.api.get_state_from_child = () => {
-                    return this.includes.test_inclusion.api.get_state();
+                    return this.includes.test_inclusion.getApi().get_state();
                 }
 
                 this.api.change_parent = () => {
@@ -153,12 +153,12 @@ describe('Component', () => {
                 }
 
                 this.api.change_child = () => {
-                    this.includes.test_inclusion.api.change("Nikolay", 32);
+                    this.includes.test_inclusion.getApi().change("Nikolay", 32);
                 }
             }
         }
 
-        let component = localStateApp.compile(TestComponent);
+        let component = localStateApp.component(TestComponent);
 
         // no state at all:
         assert.equal(

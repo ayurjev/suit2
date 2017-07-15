@@ -6,7 +6,7 @@ import {Component} from "../src/classes/Component";
 
 describe('Application', () => {
 
-    let c = new Application();
+    let app = new Application();
 
 
     it('should compile template into class Component', () => {
@@ -15,7 +15,7 @@ describe('Application', () => {
             template() { return 'anything'; }
         }
 
-        let component = c.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert(component instanceof Component);
     });
@@ -27,7 +27,7 @@ describe('Application', () => {
             template() { return 'His name is <b>{$user.name}</b> and he is {$user.age} years old'; }
         }
 
-        let component = c.compile(TestComponent, {user: {name: "Andrey", age: 28}});
+        let component = app.component(TestComponent, {user: {name: "Andrey", age: 28}});
 
         assert.equal('His name is <b>Andrey</b> and he is 28 years old', component.render());
     });
@@ -39,7 +39,7 @@ describe('Application', () => {
             template() { return 'His name is <b>{$user.name}</b> and he is {$user.age || 18} years old'; }
         }
 
-        let component = c.compile(TestComponent, {user: {name: "Andrey"}});
+        let component = app.component(TestComponent, {user: {name: "Andrey"}});
 
         assert.equal('His name is <b>Andrey</b> and he is 18 years old', component.render());
     });
@@ -51,7 +51,7 @@ describe('Application', () => {
             template() { return 'His name is <b>{$user.name}</b> and he is {$user.age < 18 ? young : old}'; }
         }
 
-        let component = c.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal('His name is <b>Andrey</b> and he is young', component.render({user: {name: "Andrey", age: 14}}));
         assert.equal('His name is <b>Andrey</b> and he is old', component.render({user: {name: "Andrey", age: 28}}));
@@ -64,7 +64,7 @@ describe('Application', () => {
             template() { return 'His name is <b>{$user.name}</b> {$user.age < 18 ? and he is young}'; }
         }
 
-        let component = c.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal('His name is <b>Andrey</b> and he is young', component.render({user: {name: "Andrey", age: 14}}));
         assert.equal('His name is <b>Andrey</b> ', component.render({user: {name: "Andrey", age: 28}}));
@@ -77,7 +77,7 @@ describe('Application', () => {
             template() { return 'His name is <b>{$user.name}</b> {($user.age < 18) && ($user.age > 10) ? and he is teenager}'; }
         }
 
-        let component = c.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal('His name is <b>Andrey</b> and he is teenager', component.render({user: {name: "Andrey", age: 14}}));
         assert.equal('His name is <b>Andrey</b> ', component.render({user: {name: "Andrey", age: 28}}));
@@ -93,7 +93,7 @@ describe('Application', () => {
                 `;
             }
         }
-        let component = c.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal(
             'His name is <b>Andrey</b> and he is not 42 years old',
@@ -116,7 +116,7 @@ describe('Application', () => {
                 `;
             }
         }
-        let component = c.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal(
             'His name is <b>Andrey</b> and he is not 42 years old',
@@ -142,7 +142,7 @@ describe('Application', () => {
                 `;
             }
         }
-        let component1 = c.compile(TestComponent);
+        let component1 = app.component(TestComponent);
 
         assert.equal(
             'His name is <b>Andrey</b> and we know how old is he',
@@ -161,7 +161,7 @@ describe('Application', () => {
             }
         }
 
-        let component2 = c.compile(TestComponent2);
+        let component2 = app.component(TestComponent2);
 
         assert.equal(
             `His name is <b>Andrey</b> and we don\'t know how old is he (unknown)`,
@@ -182,7 +182,7 @@ describe('Application', () => {
                 `;
             }
         }
-        let component = c.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal(
             'There were 3 students in the class:<br /> 1) Andrey - 28<br />2) Alex - 19<br />3) Ivan - 42<br />',
@@ -212,7 +212,7 @@ describe('Application', () => {
             }
         }
 
-        let component = c.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal(
             'There were 3 students in the class:<br /> 1) Andrey - 28 - (@)<br />2) Ivan - 42 - (@)<br />',
@@ -242,7 +242,7 @@ describe('Application', () => {
             }
         }
 
-        let component = c.compile(TestComponent, {user: {name: "Andrey", age: 28}}, {"inclusion_name": TestInclusion});
+        let component = app.component(TestComponent, {user: {name: "Andrey", age: 28}}, {"inclusion_name": TestInclusion});
 
         assert.equal('PREFIX-His name is <b>Andrey</b> and he is 28 years old-SUFFIX', component.render());
     });
@@ -260,7 +260,7 @@ describe('Application', () => {
             }
         }
 
-        let component = c.compile(TestComponent, {}, {"digit": DigitComponent});
+        let component = app.component(TestComponent, {}, {"digit": DigitComponent});
 
         assert.equal('PREFIX-1-2-3-SUFFIX', component.render());
     });
@@ -278,7 +278,7 @@ describe('Application', () => {
             }
         }
 
-        let component = c.compile(TestComponent, {"includeName": "digit"}, {"digit": DigitComponent});
+        let component = app.component(TestComponent, {"includeName": "digit"}, {"digit": DigitComponent});
 
         assert.equal('PREFIX-1-2-3-SUFFIX', component.render());
     });
@@ -302,10 +302,10 @@ describe('Application', () => {
             }
         }
 
-        let baseComponent = c.compile(TestComponent, {}, {"base_template": BaseComponent});
+        let baseComponent = app.component(TestComponent, {}, {"base_template": BaseComponent});
         assert.equal('PREFIX-DEFAULT-CONTENT-SUFFIX-ENDING', baseComponent.render());
 
-        let rebasedComponent = c.compile(RebasedComponent, {}, {"base_template": BaseComponent});
+        let rebasedComponent = app.component(RebasedComponent, {}, {"base_template": BaseComponent});
         assert.equal('PREFIX-REBASED-CONTENT-SUFFIX-ENDING', rebasedComponent.render());
     });
 
@@ -322,7 +322,7 @@ describe('Application', () => {
             }
         }
 
-        let rebasedComponent = c.compile(RebasedComponent, {}, {"base_template": BaseComponent});
+        let rebasedComponent = app.component(RebasedComponent, {}, {"base_template": BaseComponent});
         assert.equal('PREFIX-REBASED-CONTENT-SUFFIX-ENDING', rebasedComponent.render());
     });
 

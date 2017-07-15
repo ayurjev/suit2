@@ -1,8 +1,10 @@
 
-require("./Helpers");
+
 import {StrategyFactory, ControllerFactory} from "./Routing";
 import {Component} from "./Component";
 import {ComponentNotFoundError,UnbalancedBracketsError} from "./Exceptions";
+require("./Helpers");
+require("./ComponentRuntime");
 
 
 /**
@@ -17,7 +19,7 @@ export class Application {
         this.subscriptions = {};
         this.uids_cache = {};
         this.router.strategy = this.router.strategy || new StrategyFactory(this).getStrategy();
-        this.controllerFactory = new ControllerFactory(this.router);
+        this.controllerFactory = new ControllerFactory(this);
         this.global_includes = includes || {};
         this.initDomListeners();
     }
@@ -117,11 +119,11 @@ export class Application {
     generateUID(t) {
         // TODO: it is not good idea to use the whole temlate as a key...
         // We should use a hash, but there is no md5 function in raw js
-        if (this.uids_cache[t.template]) return this.uids_cache[t.template];
+        if (this.uids_cache[t.toString()]) return this.uids_cache[t.toString()];
         else {
             var p = () => { return ("000" + ((Math.random() * 46656) | 0).toString(36)).slice(-3) };
             var uid = p() + p();
-            this.uids_cache[t.template] = uid;
+            this.uids_cache[t.toString()] = uid;
             return uid;
         }
     }
@@ -129,34 +131,19 @@ export class Application {
     /**
      *  Compiling js-module into Component-instance
      */
-    compile(t, state, includes) {
+    component(t, state, includes) {
         var uid = this.generateUID(t);
         var prev_state = this.instances[uid] ? this.instances[uid].state : {};
 
-        var component;
-        var constructor = t.default || t;
-
-        component = new constructor(
+        var component = new (t.default || t)(
             uid,
             Object.assign(prev_state || {}, state || {}),
             Object.assign({}, includes || {}),
-            "widgetName",
             this
         );
 
         this.instances[uid] = component;
         return this.instances[uid];
-    }
-
-    widget(t, state, includes) {
-        return this.compile(t, state || {}, includes || {});
-    }
-
-    /**
-     *  Compiling "target-controller" (returned by ControllerFactory)
-     */
-    compileTarget(target) {
-        return this.compile(target.controller, Object.assign({}, this.config, {"request": target.request}));
     }
 
     /**
@@ -172,7 +159,7 @@ export class Application {
      */
     loadTarget(loadTarget) {
         if (loadTarget) {
-            document.body.innerHTML = this.compileTarget(loadTarget).render();
+            document.body.innerHTML = loadTarget.render();
 
             var widgets = [].slice.call(document.getElementsByTagName("widget"));
 

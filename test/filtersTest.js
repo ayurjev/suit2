@@ -14,13 +14,13 @@ describe('Application', () => {
         class TestComponent1 extends Component {
             template() { return `{$user}!`; }
         }
-        let component1 = app.compile(TestComponent1);
+        let component1 = app.component(TestComponent1);
         assert.equal(`[object Object]!`, component1.render({user: {name: "Andrey"}}));
 
         class TestComponent2 extends Component {
             template() { return `{$user|json()}!`; }
         }
-        let component2 = app.compile(TestComponent2);
+        let component2 = app.component(TestComponent2);
         assert.equal(`{"name":"Andrey"}!`, component2.render({user: {name: "Andrey"}}));
     });
 
@@ -31,7 +31,7 @@ describe('Application', () => {
             template() { return `Length of his name equals {$user.name|length()}!`; }
         }
 
-        let component = app.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal('Length of his name equals 6!', component.render({user: {name: "Andrey"}}));
         assert.equal('Length of his name equals 0!', component.render({user: {}}));
@@ -49,7 +49,7 @@ describe('Application', () => {
             template() { return `{$user.name|exists()}`; }
         }
 
-        let component = app.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal('true', component.render({user: {name: "Andrey"}}));
         assert.equal('false', component.render({user: {}}));
@@ -75,7 +75,7 @@ describe('Application', () => {
             }
         }
 
-        let component = app.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal(
             'His name is <b>Andrey</b> and length of his name equals 6!',
@@ -98,7 +98,7 @@ describe('Application', () => {
             }
         }
 
-        let component = app.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal(
             'His name starts with "And"',
@@ -126,7 +126,7 @@ describe('Application', () => {
             }
         }
 
-        let component = app.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal(
             'His name ends with "rey"',
@@ -149,7 +149,7 @@ describe('Application', () => {
             }
         }
 
-        let component = app.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal(
             'He was born 08.09.1988',
@@ -172,7 +172,7 @@ describe('Application', () => {
             }
         }
 
-        let component = app.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal(
             'Andrey is a cool name',
@@ -200,7 +200,7 @@ describe('Application', () => {
             }
         }
 
-        let component = app.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal(
             'Andrey is a cool name',
@@ -226,7 +226,7 @@ describe('Application', () => {
             }
         }
 
-        let component = app.compile(TestComponent);
+        let component = app.component(TestComponent);
 
         assert.equal(
             '1 год,2 года,3 года,4 года,5 лет,11 лет,42 года,45 лет,',
@@ -243,7 +243,7 @@ describe('Application', () => {
     //         }
     //     }
     //
-    //     let component1 = app.compile(TestComponent1);
+    //     let component1 = app.component(TestComponent1);
     //     assert.equal('&lt;p&gt;test&lt;&#x2F;p&gt;', component1.render({html: "<p>test</p>"}));
     //
     //     class TestComponent2 extends Component {
@@ -252,7 +252,7 @@ describe('Application', () => {
     //         }
     //     }
     //
-    //     let component2 = app.compile(TestComponent2);
+    //     let component2 = app.component(TestComponent2);
     //     assert.equal('<p>test</p>', component2.render({html: "<p>test</p>"}));
     //
     // });
