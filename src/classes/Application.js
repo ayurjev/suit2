@@ -25,7 +25,7 @@ export class Application {
 
                 document.body.addEventListener("click", (event) => {
                     if (event.target.tagName.toLowerCase() == "a") {
-                        this.router.strategy.onClick(event, () => { this.load(); });
+                        this.router.strategy.onClick(event, () => {});
                         event.preventDefault();
                     }
                 });
@@ -181,6 +181,24 @@ export class Application {
                 var api = this.instances[widget.getAttribute("id")].api();
                 api.createListeners();
             });
+
+            /* Make links active or unactive automatically */
+            var links = [].slice.call(document.getElementsByTagName("a"));
+            var currentLocation = this.router.strategy.getCurrentLocation().trimAll("/").split("/");
+
+            links.forEach((a) => {
+                var href = a.getAttribute("href").trimAll("/").split("/");
+                var match = true;
+                for (var i = 0; i < href.length; i++) {
+                    if (href[i] != currentLocation[i]) {
+                        match = false;
+                        break;
+                    }
+                };
+
+                if (match) { a.classList.add("active"); }
+                else { a.classList.remove("active"); }
+            });
         }
     }
 
@@ -307,12 +325,6 @@ export class Widget {
                 return "(" + this.exp(s, additional_scope, iternum) + ")";
             });
         }
-
-        // if (/{(.+?)}/mig.test(source)) {
-        //     source = source.replace(/\((.+?)\)/mig, (m,s) => {
-        //         return "(" + this.exp(s, additional_scope, iternum) + ")";
-        //     });
-        // }
 
         if (/^for (.+?) in (.+?)\s(.+?)$/mig.test(source)) return this.list(source, additional_scope, iternum);
         if (/^include:(.+?)$/mig.test(source)) return this.include_with(source, additional_scope, iternum);

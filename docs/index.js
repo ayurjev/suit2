@@ -4,10 +4,12 @@ import {Application} from "../src/classes/Application";
 new Application(
     {
         "/": require("./pages/Title"),
+        "/about/": require("./pages/Title"),
         "/about/motivation": require("./pages/About/Motivation"),
         "/about/features": require("./pages/About/Features"),
+        "/contact/": require("./pages/Contact"),
         "/docs/": require("./pages/Docs"),
-        "/contact/": require("./pages/Contact")
+        "/docs/<subject>/": require("./pages/Docs"),
     },
     {
         "baseDir": "/suit2"

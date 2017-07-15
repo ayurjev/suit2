@@ -13,5 +13,6 @@ export default class DocsPage extends Internal {
     init () {
         this.state.caption = `Documentation`;
         this.state.content = `<p>Under development</p>`;
+        console.dir(this.state.request.subject);
     }
 }

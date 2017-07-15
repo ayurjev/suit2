@@ -16,7 +16,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 var name = exports.name = "docMenu";
 
-var template = exports.template = "\n    <nav class=\"verticalMenu\">\n        <ul>\n            \n        </ul>\n    </nav>\n";
+var template = exports.template = "\n    <nav class=\"verticalMenu\">\n        <ul>\n            <li><a href=\"/docs/variables\">Variables</a>\n        </ul>\n    </nav>\n";
 
 },{}],3:[function(require,module,exports){
 "use strict";
@@ -26,7 +26,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 var name = exports.name = "topMenu";
 
-var template = exports.template = "\n    <nav class=\"topMenu\">\n        <ul>\n            <li><a class=\"active\" href=\"/\">About</a></li>\n            <li><a href=\"/docs/\">Docs</a></li>\n            <li><a href=\"/contact/\">Contact</a></li>\n        </ul>\n    </nav>\n";
+var template = exports.template = "\n    <nav class=\"topMenu\">\n        <ul>\n            <li><a class=\"active\" href=\"/about/\">About</a></li>\n            <li><a href=\"/docs/\">Docs</a></li>\n            <li><a href=\"/contact/\">Contact</a></li>\n        </ul>\n    </nav>\n";
 
 },{}],4:[function(require,module,exports){
 "use strict";
@@ -35,10 +35,12 @@ var _Application = require("../src/classes/Application");
 
 new _Application.Application({
     "/": require("./pages/Title"),
+    "/about/": require("./pages/Title"),
     "/about/motivation": require("./pages/About/Motivation"),
     "/about/features": require("./pages/About/Features"),
+    "/contact/": require("./pages/Contact"),
     "/docs/": require("./pages/Docs"),
-    "/contact/": require("./pages/Contact")
+    "/docs/<subject>/": require("./pages/Docs")
 }, {
     "baseDir": "/suit2"
 }, {
@@ -85,7 +87,7 @@ var FeaturesPage = function (_Internal) {
     _createClass(FeaturesPage, [{
         key: "template",
         value: function template() {
-            return "{rebuild:bootstrap with\n            {submenu: include:aboutMenu},\n            {caption: Features & Ideas\"},\n            {content:\n                <ul>\n                    <li>ES6 compatible</li>\n                    <li>Freaking lightweight and compact runtime (24kb raw lib)</li>\n                    <li>No runtime dependencies (dev-dependencies only)</li>\n                    <li>Component-oriented approach (incapsulation)</li>\n                    <li>Event-driven approach (pub/sub model)</li>\n                    <li>Single-state (app wide) or Local-state (component wide)</li>\n                    <li>Built-in and very simple router</li>\n                    <li>Great support for static sites (file:// protocol supported)</li>\n                    <li>No auto-refreshing of the DOM (manual, on purpose)</li>\n                    <li>State mutations allowed</li>\n                    <li>No requirements for the project structure</li>\n                    <li>Any approach for the CSS</li>\n                    <li>No props (child component inherits parent's state)</li>\n\n                    <li class='future'>Automated assignment of '.active' for the 'a' tags (optional)</li>\n                    <li class='future'>Built-in tool for ajax-requests (optional)\n                    <li class='future'>Server-side rendering support (optional)</li>\n                    <li class='future'>Bundle.js sharding (optional)</li>\n                    <li class='future'>Component-only styles (optional)</li>\n                </ul>\n            }\n        }";
+            return "\n        {rebuild:bootstrap with\n            {submenu: include:aboutMenu},\n            {caption: Features & Ideas\"},\n            {content:\n                <ul>\n                    <li>ES6 compatible</li>\n                    <li>Freaking lightweight and compact runtime (24kb raw lib)</li>\n                    <li>No runtime dependencies (dev-dependencies only)</li>\n                    <li>Component-oriented approach (incapsulation)</li>\n                    <li>Event-driven approach (pub/sub model)</li>\n                    <li>Single-state (app wide) or Local-state (component wide)</li>\n                    <li>Built-in and very simple router</li>\n                    <li>Page-based routing system</li>\n                    <li>Great support for static sites (file:// protocol supported)</li>\n                    <li>No auto-refreshing of the DOM (manual, on purpose)</li>\n                    <li>State mutations allowed</li>\n                    <li>No requirements for the project structure</li>\n                    <li>Any approach for the CSS</li>\n                    <li>No props (child component inherits parent's state)</li>\n\n                    <li class='future'>Automated assignment of '.active' for the 'a' tags (optional)</li>\n                    <li class='future'>Built-in tool for ajax-requests (optional)\n                    <li class='future'>Server-side rendering support (optional)</li>\n                    <li class='future'>Bundle.js sharding (optional)</li>\n                    <li class='future'>Component-only styles (optional)</li>\n                </ul>\n            }\n        }";
         }
     }]);
 
@@ -162,14 +164,12 @@ var ContactPage = function (_Internal) {
     _createClass(ContactPage, [{
         key: "template",
         value: function template() {
-            return "{rebuild:bootstrap with {\n            \"content\": \"\n                <p>\n                    Github: <a href='https://github.com/ayurjev/suit2'>https://github.com/ayurjev/suit2</a>\n                </p>\n                <p>\n                    Contact me: <a href='mailto:$email'>$email</a>\n                </p>\n            \"\n        }}";
+            return "{\n            rebuild:bootstrap with\n            {caption: Contact me},\n            {content:\n                <p>\n                    Github: <a href=\"https://github.com/ayurjev/suit2\">https://github.com/ayurjev/suit2</a>\n                </p>\n                <p>\n                    Contact me: <a href=\"mailto:$email\">$email</a>\n                </p>\n            }\n        }";
         }
     }, {
         key: "init",
         value: function init() {
             var _this2 = this;
-
-            this.state.caption = "Contact me";
 
             this.api.createListeners = function () {
                 _this2.state.email = "andrey.yurjev@gmail.com";
@@ -219,6 +219,7 @@ var DocsPage = function (_Internal) {
         value: function init() {
             this.state.caption = "Documentation";
             this.state.content = "<p>Under development</p>";
+            console.dir(this.state.request.subject);
         }
     }]);
 
@@ -323,13 +324,14 @@ var Application = function () {
                 document.body.addEventListener("click", function (event) {
                     if (event.target.tagName.toLowerCase() == "a") {
                         _this.router.strategy.onClick(event, function () {
-                            _this.load();
+                            console.dir("click...");
                         });
                         event.preventDefault();
                     }
                 });
 
                 window.addEventListener('popstate', function (e) {
+                    console.dir("popstate...");
                     _this.load();
                 }, false);
                 _this.load();
@@ -517,6 +519,27 @@ var Application = function () {
                     var api = _this2.instances[widget.getAttribute("id")].api();
                     api.createListeners();
                 });
+
+                /* Make links active or unactive automatically */
+                var links = [].slice.call(document.getElementsByTagName("a"));
+                var currentLocation = this.router.strategy.getCurrentLocation().trimAll("/").split("/");
+
+                links.forEach(function (a) {
+                    var href = a.getAttribute("href").trimAll("/").split("/");
+                    var match = true;
+                    for (var i = 0; i < href.length; i++) {
+                        if (href[i] != currentLocation[i]) {
+                            match = false;
+                            break;
+                        }
+                    };
+
+                    if (match) {
+                        a.classList.add("active");
+                    } else {
+                        a.classList.remove("active");
+                    }
+                });
             }
         }
 
@@ -700,12 +723,6 @@ var Widget = exports.Widget = function () {
                     return "(" + _this4.exp(s, additional_scope, iternum) + ")";
                 });
             }
-
-            // if (/{(.+?)}/mig.test(source)) {
-            //     source = source.replace(/\((.+?)\)/mig, (m,s) => {
-            //         return "(" + this.exp(s, additional_scope, iternum) + ")";
-            //     });
-            // }
 
             if (/^for (.+?) in (.+?)\s(.+?)$/mig.test(source)) return this.list(source, additional_scope, iternum);
             if (/^include:(.+?)$/mig.test(source)) return this.include_with(source, additional_scope, iternum);

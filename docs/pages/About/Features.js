@@ -4,7 +4,8 @@ import {Internal} from "../../../src/classes/Application";
 
 export default class FeaturesPage extends Internal {
     template() {
-        return `{rebuild:bootstrap with
+        return `
+        {rebuild:bootstrap with
             {submenu: include:aboutMenu},
             {caption: Features & Ideas"},
             {content:
@@ -16,6 +17,7 @@ export default class FeaturesPage extends Internal {
                     <li>Event-driven approach (pub/sub model)</li>
                     <li>Single-state (app wide) or Local-state (component wide)</li>
                     <li>Built-in and very simple router</li>
+                    <li>Page-based routing system</li>
                     <li>Great support for static sites (file:// protocol supported)</li>
                     <li>No auto-refreshing of the DOM (manual, on purpose)</li>
                     <li>State mutations allowed</li>
