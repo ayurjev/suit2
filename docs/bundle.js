@@ -324,14 +324,13 @@ var Application = function () {
                 document.body.addEventListener("click", function (event) {
                     if (event.target.tagName.toLowerCase() == "a") {
                         _this.router.strategy.onClick(event, function () {
-                            console.dir("click...");
+                            _this.load();
                         });
                         event.preventDefault();
                     }
                 });
 
                 window.addEventListener('popstate', function (e) {
-                    console.dir("popstate...");
                     _this.load();
                 }, false);
                 _this.load();
@@ -1159,12 +1158,6 @@ var HashStrategy = exports.HashStrategy = function () {
             href = href.replace("file://", "");
             var prev = location.hash;
             location.hash = href;
-            try {
-                cb();
-            } catch (Error) {
-                location.hash = prev;
-                cb();
-            }
         }
     }]);
 

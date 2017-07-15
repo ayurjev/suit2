@@ -25,7 +25,7 @@ export class Application {
 
                 document.body.addEventListener("click", (event) => {
                     if (event.target.tagName.toLowerCase() == "a") {
-                        this.router.strategy.onClick(event, () => {});
+                        this.router.strategy.onClick(event, () => { this.load(); });
                         event.preventDefault();
                     }
                 });
@@ -668,12 +668,7 @@ export class HashStrategy {
         href = href.replace("file://", "");
         var prev = location.hash;
         location.hash = href;
-        try {
-            cb();
-        } catch(Error) {
-            location.hash = prev;
-            cb();
-        }
+        
     }
 }
 
