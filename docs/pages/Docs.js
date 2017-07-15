@@ -6,9 +6,8 @@ export default class DocsPage extends Internal {
 
     constructor() {
         super();
-        this.includes = {
-            variables: require("../articles/variables")
-        };
+        this.variables = this.widget(require("../articles/variables"));
+
     }
 
     template() {
@@ -23,7 +22,7 @@ export default class DocsPage extends Internal {
     init () {
         switch (this.state.request.subject) {
             case "variables":
-                this.state.content = this.includes.variables.render();
+                this.state.content = this.variables.render();
                 break;
             default:
                 this.state.content = `<p>Under development</p>`;

@@ -1,220 +1,201 @@
 var assert = require('assert');
 
-import {Application,Widget} from "../src/classes/Application";
+import {Application} from "../src/classes/Application";
+import {Component} from "../src/classes/Component";
 
 
-describe('Widget', () => {
+describe('Component', () => {
 
-    let page = {
-        template: "His name is <b>{$user.name}</b> and he is {$user.age} years old",
-        init: function(internal) {
-            internal.api.change = function(name, age) {
-                internal.state.user.name = name;
-                internal.state.user.age = age;
-                internal.state.local_property = "xxx";
-                internal.refresh();
+    let app = new Application();
+
+    class TestInclusion extends Component {
+        template() { return "His name is <b>{$user.name}</b> and he is {$user.age} years old"}
+        init() {
+            this.api.change = (name, age) => {
+                this.state.user.name = name;
+                this.state.user.age = age;
+                this.state.local_property = "xxx";
+                this.refresh();
             }
 
-            internal.api.get_state = function() {
-                return internal.state;
+            this.api.get_state = () => { return this.state; }
+        }
+    }
+
+    it('should convert internal inclusions into components api', () => {
+
+        class TestComponent extends Component {
+            template() { return "His name is <b>{$user.name}</b> and he is {$user.age} years old"}
+            init() {
+                this.includes = {"test_inclusion": this.component(TestInclusion)};
+                this.api.get_test_inclusion = () => { return this.includes.test_inclusion; }
             }
         }
-    };
 
-    it('should have default api() method', () => {
-        let c = new Application();
+        let component = app.compile(TestComponent);
 
-        let widget = c.compile(
-            {template: 'anything'}
-        );
-        // check widget's api:
-        assert(widget.api()["init"] instanceof Function);
-        assert(widget.api()["uid"] instanceof Function);
+        assert(component.getApi()["init"] instanceof Function);
+        assert(component.getApi()["uid"] instanceof Function);
+        assert(component.getApi()["get_test_inclusion"] instanceof Function);
+        assert(component.getApi().get_test_inclusion() instanceof Component);
     });
 
-    it('should convert internal inclusions into widgets api', () => {
-        let c = new Application();
+    it('should allow us to change its state and refresh it from inside', () => {
 
-        let widget = c.compile(
-            {
-                template: '{include:test_inclusion}',
-                init: function(internal) {
-                    internal.includes = {"test_inclusion": page};
-                    internal.api.get_test_inclusion = function() {
-                        return internal.includes.test_inclusion;
-                    }
+        class TestComponent extends Component {
+            template() { return "His name is <b>{$user.name}</b> and he is {$user.age} years old"}
+            init() {
+                this.api.change = () => {
+                    this.state.user.name = "Andrey";
+                    this.state.user.age = 28;
+                    this.refresh();
                 }
             }
-        );
-        // check widget's api:
-        assert(widget.api()["init"] instanceof Function);
-        assert(widget.api()["uid"] instanceof Function);
-        assert(widget.api()["get_test_inclusion"] instanceof Function);
+        }
 
-        // before render():
-        assert(typeof widget.api().get_test_inclusion()["template"] === "string");
-        assert(widget.api().get_test_inclusion()["init"] instanceof Function);
-        widget.render();
-        // after render():
-        assert(widget.api().get_test_inclusion()["init"] instanceof Function);
-        assert(widget.api().get_test_inclusion()["uid"] instanceof Function);
-    });
+        let component = app.compile(TestComponent);
 
-    it('should allow to us to change its state and refresh it from inside', () => {
-        let c = new Application();
-
-        let widget = c.compile(
-            {
-                template: 'His name is <b>{$user.name}</b> and he is {$user.age} years old',
-                init: function(internal) {
-                    internal.api.change = function() {
-                        internal.state.user.name = "Andrey";
-                        internal.state.user.age = 28;
-                        internal.refresh();
-                    }
-                }
-            }
-        );
-        // check widget's api:
-        assert(widget.api()["init"] instanceof Function);
-        assert(widget.api()["uid"] instanceof Function);
-        assert(widget.api()["change"] instanceof Function);
+        // check component's api:
+        assert(component.getApi()["init"] instanceof Function);
+        assert(component.getApi()["uid"] instanceof Function);
+        assert(component.getApi()["change"] instanceof Function);
 
         // no state at all:
-        assert.equal('His name is <b>null</b> and he is null years old', widget.render());
+        assert.equal('His name is <b>null</b> and he is null years old', component.render());
 
         // forced state:
-        assert.equal('His name is <b>Ivan</b> and he is 14 years old', widget.render({user: {name: "Ivan", age: 14}}));
+        assert.equal('His name is <b>Ivan</b> and he is 14 years old', component.render({user: {name: "Ivan", age: 14}}));
 
         // Changing state:
-        widget.api().change();
-        assert.equal('His name is <b>Andrey</b> and he is 28 years old', widget.render());
+        component.getApi().change();
+        assert.equal('His name is <b>Andrey</b> and he is 28 years old', component.render());
     });
 
-    it('should share state between widgets if compiler configured to work with shared state', () => {
-        let c = new Application({}, {state: "shared"});
-        let widget = c.compile(
-            {
-                template: `
+    it('should share state between components if compiler configured to work with shared state', () => {
+        let sharedStateApp = new Application({}, {state: "shared"});
+
+        class TestComponent extends Component {
+            template() {
+                return `
                     His name is <b>{$user.name}</b> and he is {$user.age} years old,
                     {include:test_inclusion}
-                `,
-                init: function(internal) {
-
-                    internal.includes = {
-                        "test_inclusion": page
-                    }
-
-                    internal.api.change_parent = function() {
-                        internal.state.user.name = "Andrey";
-                        internal.state.user.age = 28;
-                        internal.refresh();
-                    }
-
-                    internal.api.change_child = function() {
-                        internal.includes.test_inclusion.change("Nikolay", 32);
-                    }
-                }
+                `
             }
-        );
+            init() {
+                this.includes = {"test_inclusion": this.component(TestInclusion)};
+
+                this.api.change_parent = () => {
+                    this.state.user.name = "Andrey";
+                    this.state.user.age = 28;
+                    this.refresh();
+                };
+
+                this.api.change_child = () => {
+                    this.includes.test_inclusion.api.change("Nikolay", 32);
+                };
+            }
+        }
+
+        let component = sharedStateApp.compile(TestComponent);
 
         // no state at all:
         assert.equal(
             'His name is <b>null</b> and he is null years old, His name is <b>null</b> and he is null years old',
-            widget.render()
+            component.render()
         );
 
         // forced state:
         assert.equal(
             'His name is <b>Ivan</b> and he is 14 years old, His name is <b>Ivan</b> and he is 14 years old',
-            widget.render({user: {name: "Ivan", age: 14}}));
-
-        // Changing state of parent widget:
-        widget.api().change_parent();
-        assert.equal(
-            'His name is <b>Andrey</b> and he is 28 years old, His name is <b>Andrey</b> and he is 28 years old',
-            widget.render()
+            component.render({user: {name: "Ivan", age: 14}})
         );
 
-        // Changing state of child widget:
-        widget.api().change_child();
+        // Changing state of parent component:
+        component.getApi().change_parent();
+        assert.equal(
+            'His name is <b>Andrey</b> and he is 28 years old, His name is <b>Andrey</b> and he is 28 years old',
+            component.render()
+        );
+
+        // Changing state of child component:
+        component.getApi().change_child();
         assert.equal(
             'His name is <b>Nikolay</b> and he is 32 years old, His name is <b>Nikolay</b> and he is 32 years old',
-            widget.render()
+            component.render()
         );
     });
 
-    it('should NOT share state between widgets if compiler configured to work with local state', () => {
-        let c = new Application({}, {state: "local"});
+    it('should NOT share state between components if compiler configured to work with local state', () => {
+        let localStateApp = new Application({}, {state: "local"});
 
-        let widget = c.compile(
-            {
-                template: `
+        class TestComponent extends Component {
+            template() {
+                return `
                     His name is <b>{$user.name}</b> and he is {$user.age} years old,
                     {include:test_inclusion}
-                `,
-                init: function(internal) {
+                `
+            }
+            init() {
+                this.includes = {"test_inclusion": this.component(TestInclusion)};
 
-                    internal.includes = {"test_inclusion": page}
+                this.api.get_state_from_parent = () => {
+                    return this.state;
+                }
 
-                    internal.api.get_state_from_parent = function() {
-                        return internal.state;
-                    }
+                this.api.get_state_from_child = () => {
+                    return this.includes.test_inclusion.api.get_state();
+                }
 
-                    internal.api.get_state_from_child = function() {
-                        return internal.includes.test_inclusion.get_state();
-                    }
+                this.api.change_parent = () => {
+                    this.state.user.name = "Andrey";
+                    this.state.user.age = 28;
+                    this.refresh();
+                }
 
-                    internal.api.change_parent = function() {
-                        internal.state.user.name = "Andrey";
-                        internal.state.user.age = 28;
-                        internal.refresh();
-                    }
-
-                    internal.api.change_child = function() {
-                        internal.includes.test_inclusion.change("Nikolay", 32);
-                    }
+                this.api.change_child = () => {
+                    this.includes.test_inclusion.api.change("Nikolay", 32);
                 }
             }
-        );
+        }
+
+        let component = localStateApp.compile(TestComponent);
 
         // no state at all:
         assert.equal(
             'His name is <b>null</b> and he is null years old, His name is <b>null</b> and he is null years old',
-            widget.render()
+            component.render()
         );
 
         // forced state:
         assert.equal(
             'His name is <b>Ivan</b> and he is 14 years old, His name is <b>Ivan</b> and he is 14 years old',
-            widget.render({user: {name: "Ivan", age: 14}})
+            component.render({user: {name: "Ivan", age: 14}})
         );
 
-        // Changing state of parent widget:
-        widget.api().change_parent();
+        // Changing state of parent component:
+        component.getApi().change_parent();
 
         assert.equal(
             'His name is <b>Andrey</b> and he is 28 years old, His name is <b>Andrey</b> and he is 28 years old',
-            widget.render()
+            component.render()
         );
 
-        // Changing state of child widget:
-        widget.api().change_child();
+        // Changing state of child component:
+        component.getApi().change_child();
 
         // Child has a new state, while parent still has an old version:
-        assert.deepEqual({user: {name: 'Andrey', age: 28}}, widget.api().get_state_from_parent());
-        assert.deepEqual({user: {name: 'Nikolay', age: 32}, local_property: "xxx"}, widget.api().get_state_from_child());
+        assert.deepEqual({user: {name: 'Andrey', age: 28}}, component.getApi().get_state_from_parent());
+        assert.deepEqual({user: {name: 'Nikolay', age: 32}, local_property: "xxx"}, component.getApi().get_state_from_child());
 
-        // But when we call render() parent widget delegates it's version of the state to the child:
+        // But when we call render() parent component delegates it's version of the state to the child:
         assert.equal(
             'His name is <b>Andrey</b> and he is 28 years old, His name is <b>Andrey</b> and he is 28 years old',
-            widget.render()
+            component.render()
         );
 
         // So child's state has been changed back, but the property 'local_property' remained in the child's state:
-        assert.deepEqual({user: {name: 'Andrey', age: 28}}, widget.api().get_state_from_parent());
-        assert.deepEqual({user: {name: 'Andrey', age: 28}, local_property: "xxx"}, widget.api().get_state_from_child());
+        assert.deepEqual({user: {name: 'Andrey', age: 28}}, component.getApi().get_state_from_parent());
+        assert.deepEqual({user: {name: 'Andrey', age: 28}, local_property: "xxx"}, component.getApi().get_state_from_child());
     });
-
 
 });

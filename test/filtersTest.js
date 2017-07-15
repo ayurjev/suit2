@@ -1,268 +1,260 @@
 var assert = require('assert');
 
-import {Application,Widget} from "../src/classes/Application";
+import {Application} from "../src/classes/Application";
+import {Component} from "../src/classes/Component";
 
 
 describe('Application', () => {
 
-    let c = new Application();
+    let app = new Application();
+
 
     it('should support "json" filter', () => {
 
-        let widget1 = c.compile({template: `{$user}!`}, {user: {name: "Andrey"}});
-        assert.equal(`[object Object]!`, widget1.render());
+        class TestComponent1 extends Component {
+            template() { return `{$user}!`; }
+        }
+        let component1 = app.compile(TestComponent1);
+        assert.equal(`[object Object]!`, component1.render({user: {name: "Andrey"}}));
 
-        let widget2 = c.compile({template: `{$user|json()}!`}, {user: {name: "Andrey"}});
-        assert.equal(`{"name":"Andrey"}!`, widget2.render());
-
+        class TestComponent2 extends Component {
+            template() { return `{$user|json()}!`; }
+        }
+        let component2 = app.compile(TestComponent2);
+        assert.equal(`{"name":"Andrey"}!`, component2.render({user: {name: "Andrey"}}));
     });
+
 
     it('should support "length" filter', () => {
 
-        let widget = c.compile({template: `Length of his name equals {$user.name|length()}!`}, {user: {name: "Andrey"}});
-        assert.equal('Length of his name equals 6!', widget.render());
+        class TestComponent extends Component {
+            template() { return `Length of his name equals {$user.name|length()}!`; }
+        }
 
-        let widget1 = c.compile({template: `Length of his name equals {$user.name|length()}!`}, {user: {}});
-        assert.equal('Length of his name equals 0!', widget1.render());
+        let component = app.compile(TestComponent);
 
-        let widget2 = c.compile({template: `Length of his name equals {$user.name|length()}!`}, {user: {name: ["A", "n", "d", "r", "e", "y"]}});
-        assert.equal('Length of his name equals 6!', widget2.render());
-
-        let widget3 = c.compile({template: `Length of his name equals {$user.name|length()}!`}, {user: {name: {"A": 1, "n": 2, "d": 3, "r": 4, "e": 5, "y": 6}}});
-        assert.equal('Length of his name equals 6!', widget3.render());
-
-        let widget4 = c.compile({template: `Length of his name equals {$user.name|length()}!`}, {user: {name: false}});
-        assert.equal('Length of his name equals 0!', widget4.render());
-
-        let widget5 = c.compile({template: `Length of his name equals {$user.name|length()}!`}, {user: {name: null}});
-        assert.equal('Length of his name equals 0!', widget5.render());
-
-        let widget6 = c.compile({template: `Length of his name equals {$user.name|length()}!`}, {user: {name: true}});
-        assert.equal('Length of his name equals 1!', widget6.render());
+        assert.equal('Length of his name equals 6!', component.render({user: {name: "Andrey"}}));
+        assert.equal('Length of his name equals 0!', component.render({user: {}}));
+        assert.equal('Length of his name equals 6!', component.render({user: {name: ["A", "n", "d", "r", "e", "y"]}}));
+        assert.equal('Length of his name equals 6!', component.render({user: {name: {"A": 1, "n": 2, "d": 3, "r": 4, "e": 5, "y": 6}}}));
+        assert.equal('Length of his name equals 0!', component.render({user: {name: false}}));
+        assert.equal('Length of his name equals 0!', component.render({user: {name: null}}));
+        assert.equal('Length of his name equals 1!', component.render({user: {name: true}}));
     });
+
 
     it('should support "exists" filter', () => {
 
-        let widget = c.compile({template: `{$user.name|exists()}`}, {user: {name: "Andrey"}});
-        assert.equal('true', widget.render());
+        class TestComponent extends Component {
+            template() { return `{$user.name|exists()}`; }
+        }
 
-        let widget1 = c.compile({template: `{$user.name|exists()}!`}, {user: {}});
-        assert.equal('false!', widget1.render());
+        let component = app.compile(TestComponent);
 
-        let widget2 = c.compile({template: `{$user.name|exists()}!`}, {user: {name: ["A", "n", "d", "r", "e", "y"]}});
-        assert.equal('true!', widget2.render());
-
-        let widget3 = c.compile({template: `{$user.name|exists()}!`}, {user: {name: {"A": 1, "n": 2, "d": 3, "r": 4, "e": 5, "y": 6}}});
-        assert.equal('true!', widget3.render());
-
-        let widget4 = c.compile({template: `{$user.name|exists()}!`}, {user: {name: false}});
-        assert.equal('false!', widget4.render());
-
-        let widget5 = c.compile({template: `{$user.name|exists()}!`}, {user: {name: null}});
-        assert.equal('false!', widget5.render());
-
-        let widget6 = c.compile({template: `{$user.name|exists()}!`}, {user: {name: true}});
-        assert.equal('true!', widget6.render());
+        assert.equal('true', component.render({user: {name: "Andrey"}}));
+        assert.equal('false', component.render({user: {}}));
+        assert.equal('true', component.render({user: {name: ["A", "n", "d", "r", "e", "y"]}}));
+        assert.equal('true', component.render({user: {name: {"A": 1, "n": 2, "d": 3, "r": 4, "e": 5, "y": 6}}}));
+        assert.equal('false', component.render({user: {name: false}}));
+        assert.equal('false', component.render({user: {name: null}}));
+        assert.equal('true', component.render({user: {name: true}}));
     });
 
+
     it('should support "length" filter inside conditional blocks', () => {
-        let widget = c.compile(
-            {
-                template: `
+
+        class TestComponent extends Component {
+            template() {
+                return `
                     His name is <b>{$user.name}</b>
                     {$user.name|length() != 6
                         ? and length of his name does not equal 6
                         : and length of his name equals 6!
                     }
-                `
-            },
-            {user: {name: "Andrey"}}
-        );
+                `;
+            }
+        }
+
+        let component = app.compile(TestComponent);
+
         assert.equal(
             'His name is <b>Andrey</b> and length of his name equals 6!',
-            widget.render()
+            component.render({user: {name: "Andrey"}})
         );
+
     });
+
 
     it('should support "starstwith" filter', () => {
-        let widget1 = c.compile(
-            {
-                template: `
+
+        class TestComponent extends Component {
+            template() {
+                return `
                     {$user.name|startswith("And")
                         ? His name starts with "And"
                         : His name does not start with "And"
                     }
-                `
-            },
-            {user: {name: "Andrey"}}
-        );
+                `;
+            }
+        }
+
+        let component = app.compile(TestComponent);
+
         assert.equal(
             'His name starts with "And"',
-            widget1.render()
+            component.render({user: {name: "Andrey"}})
         );
 
-        let widget2 = c.compile(
-            {
-                template: `
-                    {$user.name|startswith("And")
-                        ? His name starts with "And"
-                        : His name does not start with "And"
-                    }
-                `
-            },
-            {user: {name: "Ivan"}}
-        );
         assert.equal(
             'His name does not start with "And"',
-            widget2.render()
+            component.render({user: {name: "Ivan"}})
         );
+
     });
+
 
     it('should support "endswith" filter', () => {
-        let widget1 = c.compile(
-            {
-                template: `
+
+        class TestComponent extends Component {
+            template() {
+                return `
                     {$user.name|endswith("rey")
                         ? His name ends with "rey"
                         : His name does not end with "rey"
                     }
-                `
-            },
-            {user: {name: "Andrey"}}
-        );
+                `;
+            }
+        }
+
+        let component = app.compile(TestComponent);
+
         assert.equal(
             'His name ends with "rey"',
-            widget1.render()
+            component.render({user: {name: "Andrey"}})
         );
 
-        let widget2 = c.compile(
-            {
-                template: `
-                    {$user.name|endswith("rey")
-                        ? His name ends with "rey"
-                        : His name does not end with "rey"
-                    }
-                `
-            },
-            {user: {name: "Ivan"}}
-        );
         assert.equal(
             'His name does not end with "rey"',
-            widget2.render()
+            component.render({user: {name: "Ivan"}})
         );
+
     });
+
 
     it('should support "format" filter', () => {
-        let widget = c.compile(
-            {template: `He was born {$user.birthdate|format("%d.%m.%Y")}`},
-            {user: {birthdate: new Date(1988, 8, 8)}}
-        );
+
+        class TestComponent extends Component {
+            template() {
+                return `He was born {$user.birthdate|format("%d.%m.%Y")}`;
+            }
+        }
+
+        let component = app.compile(TestComponent);
+
         assert.equal(
             'He was born 08.09.1988',
-            widget.render()
+            component.render({user: {birthdate: new Date(1988, 8, 8)}})
         );
+
     });
+
 
     it('should support "in" filter', () => {
-        let widget1 = c.compile(
-            {template: `
-                {$user.name|in($coolNames)
-                    ? $user.name is cool name
-                    : $user.name is not cool name
-                }`
 
-            },
-            {user: {name: "Andrey"}, coolNames: ["Andrey", "Nikolay"]}
+        class TestComponent extends Component {
+            template() {
+                return `
+                    {$user.name|in($coolNames)
+                        ? $user.name is a cool name
+                        : $user.name is not a cool name
+                    }
+                `;
+            }
+        }
+
+        let component = app.compile(TestComponent);
+
+        assert.equal(
+            'Andrey is a cool name',
+            component.render({user: {name: "Andrey"}, coolNames: ["Andrey", "Nikolay"]})
         );
 
         assert.equal(
-            'Andrey is cool name',
-            widget1.render()
+            'BRWYRWYR is not a cool name',
+            component.render({user: {name: "BRWYRWYR"}, coolNames: ["Andrey", "Nikolay"]})
         );
 
-        let widget2 = c.compile(
-            {template: `
-                {$user.name|in($coolNames)
-                    ? $user.name is cool name
-                    : $user.name is not cool name
-                }`
-
-            },
-            {user: {name: "BRWYRWYR"}, coolNames: ["Andrey", "Nikolay"]}
-        );
-
-        assert.equal(
-            'BRWYRWYR is not cool name',
-            widget2.render()
-        );
     });
+
 
     it('should support "contains" filter', () => {
-        let widget1 = c.compile(
-            {template: `
-                {$coolNames|contains($user.name)
-                    ? $user.name is cool name
-                    : $user.name is not cool name
-                }`
 
-            },
-            {user: {name: "Andrey"}, coolNames: ["Andrey", "Nikolay"]}
+        class TestComponent extends Component {
+            template() {
+                return `
+                    {$coolNames|contains($user.name)
+                        ? $user.name is a cool name
+                        : $user.name is not a cool name
+                    }
+                `;
+            }
+        }
+
+        let component = app.compile(TestComponent);
+
+        assert.equal(
+            'Andrey is a cool name',
+            component.render({user: {name: "Andrey"}, coolNames: ["Andrey", "Nikolay"]})
         );
 
         assert.equal(
-            'Andrey is cool name',
-            widget1.render()
-        );
-
-        let widget2 = c.compile(
-            {template: `
-                {$coolNames|contains($user.name)
-                    ? $user.name is cool name
-                    : $user.name is not cool name
-                }`
-
-            },
-            {user: {name: "BRWYRWYR"}, coolNames: ["Andrey", "Nikolay"]}
-        );
-
-        assert.equal(
-            'BRWYRWYR is not cool name',
-            widget2.render()
+            'BRWYRWYR is not a cool name',
+            component.render({user: {name: "BRWYRWYR"}, coolNames: ["Andrey", "Nikolay"]})
         );
     });
 
+
     it('should support "pluralform" filter', () => {
-        let widget = c.compile(
-            {
-                template: `
+
+        class TestComponent extends Component {
+            template() {
+                return `
                     {for $age in $ages
                         $age|pluralform(["год","года","лет"]),
                     }
-                `
-            },
-            {ages: [1, 2, 3, 4, 5, 11, 42, 45]}
-        );
+                `;
+            }
+        }
+
+        let component = app.compile(TestComponent);
 
         assert.equal(
             '1 год,2 года,3 года,4 года,5 лет,11 лет,42 года,45 лет,',
-            widget.render()
+            component.render({ages: [1, 2, 3, 4, 5, 11, 42, 45]})
         );
     });
 
+    // TODO: auto-escaping is disabled because of some problems with rebuild syntax...
     // it('should support "html" filter and escape characters by default', () => {
-    //     let widget1 = c.compile(
-    //         {template: `{$html}`},
-    //         {html: "<p>test</p>"}
-    //     );
     //
-    //     assert.equal('&lt;p&gt;test&lt;&#x2F;p&gt;', widget1.render());
+    //     class TestComponent1 extends Component {
+    //         template() {
+    //             return `{$html}`;
+    //         }
+    //     }
     //
-    //     let widget = c.compile(
-    //         {template: `{$html|html()}`},
-    //         {html: "<p>test</p>"}
-    //     );
+    //     let component1 = app.compile(TestComponent1);
+    //     assert.equal('&lt;p&gt;test&lt;&#x2F;p&gt;', component1.render({html: "<p>test</p>"}));
     //
-    //     assert.equal('<p>test</p>', widget.render());
+    //     class TestComponent2 extends Component {
+    //         template() {
+    //             return `{$html|html()}`;
+    //         }
+    //     }
+    //
+    //     let component2 = app.compile(TestComponent2);
+    //     assert.equal('<p>test</p>', component2.render({html: "<p>test</p>"}));
+    //
     // });
 
 });

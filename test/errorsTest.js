@@ -1,31 +1,37 @@
 var assert = require('assert');
 
-import {
-    Application,Widget,
-    UnbalancedBracketsError,
-    WidgetNotFoundError
-} from "../src/classes/Application";
+import {Application} from "../src/classes/Application";
+import {Component} from "../src/classes/Component";
+import {UnbalancedBracketsError, ComponentNotFoundError} from  "../src/classes/Exceptions";
 
 
 describe('Compiler', () => {
 
-    let c = new Application();
+    let app = new Application();
 
     it('should tell us if template has unbalanced brackets', () => {
-        assert.throws(() => {
-            c.compile({template: 'His name is <b>{$user.name}</b> and he is {$user.age years old'});
-        }, UnbalancedBracketsError);
+        class TestComponent extends Component {
+            template() {
+                return 'His name is <b>{$user.name}</b> and he is {$user.age years old';
+            }
+        }
+        assert.throws(() => { app.compile(TestComponent) }, UnbalancedBracketsError);
     });
 
     it('should tell us if we forgot to define includes correctly', () => {
+        class TestComponent extends Component {
+            template() {
+                return '{rebuild:bootstrap with {"content": "REBASED-CONTENT"}}';
+            }
+        }
         assert.throws(() => {
-            let widget = c.compile(
-                {template: '{rebuild:bootstrap with {"content": "REBASED-CONTENT"}}'},
+            let component = app.compile(
+                TestComponent,
                 {}, // state is empty, doesn't matter...
                 {}, // includes are empty, so no bootstrap widget can be found...
             );
-            widget.render();
-        }, WidgetNotFoundError);
+            component.render();
+        }, ComponentNotFoundError);
     });
 
 });

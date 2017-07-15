@@ -6,6 +6,8 @@ export default class Variables extends Internal {
     constructor() {
         super();
         this.api.initCode = this.initCode;
+
+        
     }
     template() {
         return `VARS!`
