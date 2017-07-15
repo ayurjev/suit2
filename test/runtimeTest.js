@@ -28,7 +28,7 @@ describe('Widget', () => {
             {template: 'anything'}
         );
         // check widget's api:
-        assert(widget.api()["createListeners"] instanceof Function);
+        assert(widget.api()["init"] instanceof Function);
         assert(widget.api()["uid"] instanceof Function);
     });
 
@@ -47,7 +47,7 @@ describe('Widget', () => {
             }
         );
         // check widget's api:
-        assert(widget.api()["createListeners"] instanceof Function);
+        assert(widget.api()["init"] instanceof Function);
         assert(widget.api()["uid"] instanceof Function);
         assert(widget.api()["get_test_inclusion"] instanceof Function);
 
@@ -56,7 +56,7 @@ describe('Widget', () => {
         assert(widget.api().get_test_inclusion()["init"] instanceof Function);
         widget.render();
         // after render():
-        assert(widget.api().get_test_inclusion()["createListeners"] instanceof Function);
+        assert(widget.api().get_test_inclusion()["init"] instanceof Function);
         assert(widget.api().get_test_inclusion()["uid"] instanceof Function);
     });
 
@@ -76,7 +76,7 @@ describe('Widget', () => {
             }
         );
         // check widget's api:
-        assert(widget.api()["createListeners"] instanceof Function);
+        assert(widget.api()["init"] instanceof Function);
         assert(widget.api()["uid"] instanceof Function);
         assert(widget.api()["change"] instanceof Function);
 

@@ -4,11 +4,54 @@
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _Application = require("../../src/classes/Application");
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var Variables = function (_Internal) {
+    _inherits(Variables, _Internal);
+
+    function Variables() {
+        _classCallCheck(this, Variables);
+
+        var _this = _possibleConstructorReturn(this, (Variables.__proto__ || Object.getPrototypeOf(Variables)).call(this));
+
+        _this.api.init_code = function () {
+            return "code has been initiated";
+        };
+        return _this;
+    }
+
+    _createClass(Variables, [{
+        key: "template",
+        value: function template() {
+            return "VARS!";
+        }
+    }]);
+
+    return Variables;
+}(_Application.Internal);
+
+exports.default = Variables;
+
+},{"../../src/classes/Application":12}],2:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 var name = exports.name = "aboutMenu";
 
 var template = exports.template = "\n    <nav class=\"verticalMenu\">\n        <ul>\n            <li><a class=\"active\" href=\"/about/motivation\">Motivation</a></li>\n            <li><a href=\"/about/features\">Main features & ideas</a></li>\n        </ul>\n    </nav>\n";
 
-},{}],2:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -18,7 +61,7 @@ var name = exports.name = "docMenu";
 
 var template = exports.template = "\n    <nav class=\"verticalMenu\">\n        <ul>\n            <li><a href=\"/docs/variables\">Variables</a>\n        </ul>\n    </nav>\n";
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -28,7 +71,7 @@ var name = exports.name = "topMenu";
 
 var template = exports.template = "\n    <nav class=\"topMenu\">\n        <ul>\n            <li><a class=\"active\" href=\"/about/\">About</a></li>\n            <li><a href=\"/docs/\">Docs</a></li>\n            <li><a href=\"/contact/\">Contact</a></li>\n        </ul>\n    </nav>\n";
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 
 var _Application = require("../src/classes/Application");
@@ -50,7 +93,7 @@ new _Application.Application({
     "docsMenu": require("./blocks/docsMenu")
 });
 
-},{"../src/classes/Application":11,"./blocks/aboutMenu":1,"./blocks/docsMenu":2,"./blocks/topMenu":3,"./layouts/bootstrap":5,"./pages/About/Features":6,"./pages/About/Motivation":7,"./pages/Contact":8,"./pages/Docs":9,"./pages/Title":10}],5:[function(require,module,exports){
+},{"../src/classes/Application":12,"./blocks/aboutMenu":2,"./blocks/docsMenu":3,"./blocks/topMenu":4,"./layouts/bootstrap":6,"./pages/About/Features":7,"./pages/About/Motivation":8,"./pages/Contact":9,"./pages/Docs":10,"./pages/Title":11}],6:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -58,7 +101,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 var template = exports.template = "\n\t<div class=\"wrapper\">\n\t\t<header>\n\t\t\t<h1><a href=\"/\">Suit</a></h1>\n\t\t\t{include:topMenu}\n\t\t\t{$submenu || \"\"}\n\t\t</header>\n\t\t<section>\n            <h1 class=\"post-title\">{$caption}</h1>\n\t\t\t<br />\n            {$content || DEFAULT-CONTENT}\n        </section>\n    </div>\n";
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -97,7 +140,7 @@ var FeaturesPage = function (_Internal) {
 exports.default = FeaturesPage;
 ;
 
-},{"../../../src/classes/Application":11}],7:[function(require,module,exports){
+},{"../../../src/classes/Application":12}],8:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -135,7 +178,7 @@ var MotivationPage = function (_Internal) {
 
 exports.default = MotivationPage;
 
-},{"../../../src/classes/Application":11}],8:[function(require,module,exports){
+},{"../../../src/classes/Application":12}],9:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -169,12 +212,7 @@ var ContactPage = function (_Internal) {
     }, {
         key: "init",
         value: function init() {
-            var _this2 = this;
-
-            this.api.createListeners = function () {
-                _this2.state.email = "andrey.yurjev@gmail.com";
-                _this2.refresh();
-            };
+            this.state.email = "andrey.yurjev@gmail.com";
         }
     }]);
 
@@ -183,7 +221,7 @@ var ContactPage = function (_Internal) {
 
 exports.default = ContactPage;
 
-},{"../../src/classes/Application":11}],9:[function(require,module,exports){
+},{"../../src/classes/Application":12}],10:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -206,20 +244,31 @@ var DocsPage = function (_Internal) {
     function DocsPage() {
         _classCallCheck(this, DocsPage);
 
-        return _possibleConstructorReturn(this, (DocsPage.__proto__ || Object.getPrototypeOf(DocsPage)).apply(this, arguments));
+        var _this = _possibleConstructorReturn(this, (DocsPage.__proto__ || Object.getPrototypeOf(DocsPage)).call(this));
+
+        _this.includes = {
+            variables: require("../articles/variables")
+        };
+        return _this;
     }
 
     _createClass(DocsPage, [{
         key: "template",
         value: function template() {
-            return "{\n            rebuild:bootstrap with {\n                \"submenu\": \"include:docsMenu\"\n            }\n        }";
+            return "{\n            rebuild:bootstrap with {\n                \"submenu\": \"include:docsMenu\",\n                \"caption\": \"Documentation\"\n            }\n        }";
         }
     }, {
         key: "init",
         value: function init() {
-            this.state.caption = "Documentation";
-            this.state.content = "<p>Under development</p>";
-            console.dir(this.state.request.subject);
+            this.variables_api = this.includes.variables.api();
+            switch (this.state.request.subject) {
+                case "variables":
+                    this.state.content = this.includes.variables.render();
+                    break;
+                default:
+                    this.state.content = "<p>Under development</p>";
+            }
+            console.dir(this.variables_api.init_code());
         }
     }]);
 
@@ -228,7 +277,7 @@ var DocsPage = function (_Internal) {
 
 exports.default = DocsPage;
 
-},{"../../src/classes/Application":11}],10:[function(require,module,exports){
+},{"../../src/classes/Application":12,"../articles/variables":1}],11:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -272,7 +321,7 @@ var TitlePage = function (_Internal) {
 
 exports.default = TitlePage;
 
-},{"../../src/classes/Application":11}],11:[function(require,module,exports){
+},{"../../src/classes/Application":12}],12:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -443,8 +492,18 @@ var Application = function () {
             var template;
 
             if (t.default) {
-                internal = new t.default(uid, Object.assign(prev_state, state), includes);
+                internal = new t.default();
+                internal.initApi(internal.api);
+                internal.setUID(uid);
+                internal.setState(Object.assign({}, prev_state || {}, state || {}, internal.state || {}));
+                internal.setIncludes(Object.assign({}, includes || {}, internal.includes || {}));
+
+                for (var incname in internal.includes) {
+                    if (!(internal.includes[incname] instanceof Widget)) internal.includes[incname] = this.compile(internal.includes[incname], state, {});
+                }
+
                 internal.init();
+
                 try {
                     if (window) {
                         template = '<widget id="' + uid + '">' + internal.template() + '</widget>';
@@ -453,8 +512,14 @@ var Application = function () {
                     template = internal.template();
                 }
             } else {
-                var internal = new Internal(uid, Object.assign(prev_state, state), includes);
+                var internal = new Internal();
+                internal.initApi();
+                internal.setUID(uid);
+                internal.setState(Object.assign(prev_state || {}, state || {}, internal.state || {}));
+                internal.setIncludes(Object.assign({}, includes || {}, internal.includes || {}));
+
                 if (t.init) t.init(internal);
+
                 try {
                     if (window) {
                         template = '<widget id="' + uid + '">' + t.template + '</widget>';
@@ -477,6 +542,43 @@ var Application = function () {
             }, internal, this);
 
             return this.instances[uid];
+        }
+    }, {
+        key: "buildInclusion",
+        value: function buildInclusion(internal, t, expression, additional_scope) {
+
+            if (t instanceof Widget) return t;
+
+            if (t && t.uid instanceof Function || t instanceof Array) {
+                t = internal._includes[expression];
+            }
+
+            if (!t) {
+                try {
+                    t = require(expression);
+                } catch (Exception) {
+                    throw new WidgetNotFoundError("widget '" + expression + "' not found. Check internal.includes property of '" + internal._widgetName + "' widget");
+                }
+            }
+
+            var widget = this.compile(t, Object.assign({}, this.deepClone(internal.state), additional_scope));
+
+            if (t.uid instanceof Function) {
+                internal.includes[expression] = [t, widget.api()];
+            } else if (t instanceof Array) {
+                internal.includes[expression].push(widget.api());
+            } else {
+                if (!internal._includes) internal._includes = {};
+                internal._includes[expression] = t;
+                internal.includes[expression] = widget.api();
+            }
+
+            return widget;
+        }
+    }, {
+        key: "widget",
+        value: function widget(t, state, includes) {
+            return this.compile(t, state || {}, includes || {});
         }
 
         /**
@@ -507,17 +609,8 @@ var Application = function () {
     }, {
         key: "loadTarget",
         value: function loadTarget(_loadTarget) {
-            var _this2 = this;
-
             if (_loadTarget) {
                 document.body.innerHTML = this.compileTarget(_loadTarget).render();
-
-                var widgets = [].slice.call(document.getElementsByTagName("widget"));
-
-                widgets.forEach(function (widget) {
-                    var api = _this2.instances[widget.getAttribute("id")].api();
-                    api.createListeners();
-                });
 
                 /* Make links active or unactive automatically */
                 var links = [].slice.call(document.getElementsByTagName("a"));
@@ -606,36 +699,65 @@ var Application = function () {
 exports.Application = Application;
 
 var Internal = exports.Internal = function () {
-    function Internal(uid, state, includes, widgetName) {
-        var _this3 = this;
-
+    function Internal() {
         _classCallCheck(this, Internal);
 
-        this.uid = uid;
-        this.tag = function () {
-            try {
-                return document.getElementById(_this3.uid);
-            } catch (e) {}
-        };
-        this.api = {
-            createListeners: function createListeners() {},
-            uid: function uid() {
-                return _this3.uid;
-            }
-        };
-        this.state = state || {};
-        this.includes = includes || {};
-        this._widgetName = widgetName;
-
-        this.subscribe = function (eName, cb, origin) {
-            window.app.subscribe(eName, cb, origin);
-        };
-        this.broadcast = function (eName, message) {
-            window.app.broadcast(eName, message, _this3.api);
-        };
+        this.api = {};
+        this.includes = {};
     }
 
     _createClass(Internal, [{
+        key: "tag",
+        value: function tag() {
+            try {
+                return document.getElementById(this.uid);
+            } catch (e) {}
+        }
+    }, {
+        key: "subscribe",
+        value: function subscribe(eName, cb, origin) {
+            window.app.subscribe(eName, cb, origin);
+        }
+    }, {
+        key: "broadcast",
+        value: function broadcast(eName, message) {
+            window.app.broadcast(eName, message, this.api);
+        }
+    }, {
+        key: "initApi",
+        value: function initApi(api) {
+            var _this2 = this;
+
+            this.api = Object.assign({
+                uid: function uid() {
+                    return _this2.uid;
+                },
+                init: function init() {
+                    _this2.init();
+                }
+            }, api || {});
+        }
+    }, {
+        key: "setWidgetName",
+        value: function setWidgetName(widgetName) {
+            this._widgetName = widgetName;
+        }
+    }, {
+        key: "setUID",
+        value: function setUID(uid) {
+            this.uid = uid;
+        }
+    }, {
+        key: "setState",
+        value: function setState(state) {
+            this.state = state || {};
+        }
+    }, {
+        key: "setIncludes",
+        value: function setIncludes(includes) {
+            this.includes = includes || {};
+        }
+    }, {
         key: "init",
         value: function init() {}
     }, {
@@ -709,7 +831,7 @@ var Widget = exports.Widget = function () {
     }, {
         key: "exp",
         value: function exp(source, additional_scope, iternum) {
-            var _this4 = this;
+            var _this3 = this;
 
             try {
                 source = source.trim();
@@ -719,7 +841,7 @@ var Widget = exports.Widget = function () {
 
             if (/\((.+?)\)/mig.test(source)) {
                 source = source.replace(/\((.+?)\)/mig, function (m, s) {
-                    return "(" + _this4.exp(s, additional_scope, iternum) + ")";
+                    return "(" + _this3.exp(s, additional_scope, iternum) + ")";
                 });
             }
 
@@ -934,29 +1056,7 @@ var Widget = exports.Widget = function () {
 
             var t = this.internal.includes[expression] || this.app.global_includes[expression];
 
-            if (t && t.uid instanceof Function || t instanceof Array) {
-                t = this.internal._includes[expression];
-            }
-
-            if (!t) {
-                try {
-                    t = require(expression);
-                } catch (Exception) {
-                    throw new WidgetNotFoundError("widget '" + expression + "' not found. Check internal.includes property of '" + this.internal._widgetName + "' widget");
-                }
-            }
-
-            var widget = this.app.compile(t, Object.assign({}, this.app.deepClone(this.internal.state), additional_scope));
-
-            if (t.uid instanceof Function) {
-                this.internal.includes[expression] = [t, widget.api()];
-            } else if (t instanceof Array) {
-                this.internal.includes[expression].push(widget.api());
-            } else {
-                if (!this.internal._includes) this.internal._includes = {};
-                this.internal._includes[expression] = t;
-                this.internal.includes[expression] = widget.api();
-            }
+            var widget = this.app.buildInclusion(this.internal, t, expression, additional_scope);
 
             return widget.render();
         }
@@ -1374,4 +1474,4 @@ function WidgetNotFoundError(message) {
 }
 WidgetNotFoundError.prototype = new Error();
 
-},{}]},{},[4]);
+},{}]},{},[5]);

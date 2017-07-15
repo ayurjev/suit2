@@ -129,13 +129,30 @@ export class Application {
         var template;
 
         if (t.default){
-            internal = new t.default(uid, Object.assign(prev_state, state), includes);
+            internal = new t.default();
+            internal.initApi(internal.api);
+            internal.setUID(uid);
+            internal.setState(Object.assign({}, prev_state || {}, state || {}, internal.state || {}));
+            internal.setIncludes(Object.assign({}, includes || {}, internal.includes || {}));
+
+            for (var incname in internal.includes) {
+                if (!(internal.includes[incname] instanceof Widget))
+                    internal.includes[incname] = this.compile(internal.includes[incname], state, {});
+            }
+
             internal.init();
+
             try                     { if (window) { template = '<widget id="' + uid + '">'+internal.template()+'</widget>'; }}
             catch (ReferenceError)  { template = internal.template(); }
         } else {
-            var internal = new Internal(uid, Object.assign(prev_state, state), includes)
+            var internal = new Internal();
+            internal.initApi();
+            internal.setUID(uid);
+            internal.setState(Object.assign(prev_state || {}, state || {}, internal.state || {}));
+            internal.setIncludes(Object.assign({}, includes || {}, internal.includes || {}));
+
             if (t.init) t.init(internal);
+
             try                     { if (window) { template = '<widget id="' + uid + '">'+t.template+'</widget>'; }}
             catch (ReferenceError)  { template = t.template; }
         }
@@ -151,6 +168,47 @@ export class Application {
         this.instances[uid] = new Widget(() => { return eval('() => { return `' + template + '`}')(); }, internal, this);
 
         return this.instances[uid];
+    }
+
+    buildInclusion(internal, t, expression, additional_scope) {
+
+        if (t instanceof Widget) return t;
+
+        if ((t && t.uid instanceof Function) || t instanceof Array) {
+            t = internal._includes[expression];
+        }
+
+        if (!t) {
+            try {
+                t = require(expression);
+            }
+            catch (Exception) {
+                throw new WidgetNotFoundError(
+                    "widget '" + expression + "' not found. Check internal.includes property of '" + internal._widgetName + "' widget"
+                );
+            }
+        }
+
+        var widget = this.compile(
+            t, Object.assign({},  this.deepClone(internal.state), additional_scope)
+        );
+
+        if (t.uid instanceof Function) {
+            internal.includes[expression] = [t, widget.api()];
+        }
+        else if (t instanceof Array) {
+            internal.includes[expression].push(widget.api());
+        } else {
+            if (!internal._includes) internal._includes = {};
+            internal._includes[expression] = t;
+            internal.includes[expression] = widget.api();
+        }
+
+        return widget;
+    }
+
+    widget(t, state, includes) {
+        return this.compile(t, state || {}, includes || {});
     }
 
     /**
@@ -174,13 +232,6 @@ export class Application {
     loadTarget(loadTarget) {
         if (loadTarget) {
             document.body.innerHTML = this.compileTarget(loadTarget).render();
-
-            var widgets = [].slice.call(document.getElementsByTagName("widget"));
-
-            widgets.forEach((widget) => {
-                var api = this.instances[widget.getAttribute("id")].api();
-                api.createListeners();
-            });
 
             /* Make links active or unactive automatically */
             var links = [].slice.call(document.getElementsByTagName("a"));
@@ -251,19 +302,35 @@ export class Application {
  */
 export class Internal {
 
-    constructor(uid, state, includes, widgetName) {
-        this.uid = uid;
-        this.tag = () => { try { return document.getElementById(this.uid);  } catch (e) {} }
-        this.api = {
-            createListeners: () => {},
-            uid: () => { return this.uid; },
-        };
-        this.state = state || {};
-        this.includes = includes || {};
-        this._widgetName = widgetName;
+    constructor() {
+        this.api = {};
+        this.includes = {};
+    }
 
-        this.subscribe = (eName, cb, origin) => { window.app.subscribe(eName, cb, origin); }
-        this.broadcast = (eName, message) => { window.app.broadcast(eName, message, this.api); }
+    tag() {
+        try { return document.getElementById(this.uid);  } catch (e) {}
+    }
+
+    subscribe(eName, cb, origin) { window.app.subscribe(eName, cb, origin); }
+    broadcast(eName, message) { window.app.broadcast(eName, message, this.api); }
+
+    initApi(api) {
+        this.api = Object.assign({
+            uid: () => { return this.uid; },
+            init: () => { this.init(); }
+        }, api || {});
+    }
+    setWidgetName(widgetName) {
+        this._widgetName = widgetName;
+    }
+    setUID(uid) {
+        this.uid = uid;
+    }
+    setState(state) {
+        this.state = state || {};
+    }
+    setIncludes(includes) {
+        this.includes = includes || {};
     }
 
     init() {}
@@ -490,35 +557,7 @@ export class Widget {
 
         var t = this.internal.includes[expression] || this.app.global_includes[expression];
 
-        if ((t && t.uid instanceof Function) || t instanceof Array) {
-            t = this.internal._includes[expression];
-        }
-
-        if (!t) {
-            try {
-                t = require(expression);
-            }
-            catch (Exception) {
-                throw new WidgetNotFoundError(
-                    "widget '" + expression + "' not found. Check internal.includes property of '" + this.internal._widgetName + "' widget"
-                );
-            }
-        }
-
-        var widget = this.app.compile(
-            t, Object.assign({},  this.app.deepClone(this.internal.state), additional_scope)
-        );
-
-        if (t.uid instanceof Function) {
-            this.internal.includes[expression] = [t, widget.api()];
-        }
-        else if (t instanceof Array) {
-            this.internal.includes[expression].push(widget.api());
-        } else {
-            if (!this.internal._includes) this.internal._includes = {};
-            this.internal._includes[expression] = t;
-            this.internal.includes[expression] = widget.api();
-        }
+        var widget = this.app.buildInclusion(this.internal, t, expression, additional_scope);
 
         return widget.render();
     }
@@ -668,7 +707,7 @@ export class HashStrategy {
         href = href.replace("file://", "");
         var prev = location.hash;
         location.hash = href;
-        
+
     }
 }
 

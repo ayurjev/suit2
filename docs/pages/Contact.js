@@ -18,9 +18,6 @@ export default class ContactPage extends Internal {
         }`
     }
     init() {
-        this.api.createListeners = () => {
-            this.state.email = "andrey.yurjev@gmail.com";
-            this.refresh();
-        }
+        this.state.email = "andrey.yurjev@gmail.com";
     }
 }
