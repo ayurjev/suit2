@@ -18,6 +18,7 @@ export default class DocsPage extends Component {
 
         switch (this.state.request.subject) {
             case "variables":
+                this.state.caption = "Variables";
                 this.state.content = this.variables.render();
                 break;
             default:

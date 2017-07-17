@@ -198,4 +198,34 @@ describe('Component', () => {
         assert.deepEqual({user: {name: 'Andrey', age: 28}, local_property: "xxx"}, component.getApi().get_state_from_child());
     });
 
+    it('should NOT share state between components if componentr configured to work with local state', () => {
+        let app = new Application();
+
+        class BaseComponent extends Component {
+            template() { return `{$caption}:{$content}` }
+        }
+
+        class TestComponent extends Component {
+
+            template() {
+                return `{
+                    rebuild:BaseComponent with {
+                        "caption": "TemplateLevelCaption",
+                        "content": "TemplateLevelContent"
+                    }
+                }`
+            }
+
+            init () {
+                this.state.caption = "InitLevelCaption";
+                this.state.content = "InitLevelContent";
+            }
+        }
+
+        let component = app.component(TestComponent, {}, {"BaseComponent": BaseComponent});
+
+        assert.equal("InitLevelCaption:InitLevelContent", component.render())
+
+    });
+
 });

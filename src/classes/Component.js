@@ -1,4 +1,6 @@
 
+import {AmbigiousDomRequest} from "./Exceptions";
+
 
 /**
  *  Component
@@ -13,15 +15,15 @@ export class Component {
         this.state = state || {};
         this.includes = includes || {};
 
-        this.compileTemplate();
-        this.init();
-    }
-
-    compileTemplate() {
         var template;
         try                     { if (window) { template = '<component id="' + this.uid + '">' + this.template() + '</component>'; }}
         catch (ReferenceError)  { template = this.template(); }
 
+        this.template = this.compileTemplate(template);
+        this.init();
+    }
+
+    compileTemplate(template) {
         template = template.replace(/\s\s+/mig, " ").trim();
 
         template = this.app.chunks(template, (to_compile) => {
@@ -29,7 +31,7 @@ export class Component {
                 return "`+this.exp(`"+s+"`)+`";
             });
         });
-        this.template = () => { return eval('() => { return `' + template + '`}')().replace(/\s\s+/mig, " "); }
+        return () => { return eval('() => { return `' + template + '`}')().replace(/\s\s+/mig, " "); }
     }
 
     setState(state) { this.state = state; }
@@ -42,12 +44,31 @@ export class Component {
         return this.app.component(t, Object.assign({}, this.app.deepClone(this.state), additional_scope || {}));
     }
 
-    tag() { try { return document.getElementById(this.uid);  } catch (e) {} }
+
     subscribe(eName, cb, origin) { window.app.subscribe(eName, cb, origin); }
     broadcast(eName, message) { window.app.broadcast(eName, message, this.api); }
     createListeners() {}
     init() {}
     template() {}
+
+    tag() {
+        return document.getElementById(this.uid);
+    }
+
+    ui(selector) {
+        return found.length == 1 ? found[0] : found;
+    }
+
+    elem(selector) {
+        var found = this.tag().querySelectorAll(selector);
+        if (found.length > 1)
+            throw new AmbigiousDomRequest("More than one element found with request elem('"+selector+"')");
+        return found.length > 0 ? found[0] : null;
+    }
+
+    elems(selector) {
+        return this.tag().querySelectorAll(selector);
+    }
 
     /**
      * Refreshing component in DOM

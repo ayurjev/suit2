@@ -326,4 +326,30 @@ describe('Application', () => {
         assert.equal('PREFIX-REBASED-CONTENT-SUFFIX-ENDING', rebasedComponent.render());
     });
 
+    it('should support rebuild syntax with curly braces instead of quotes and other expressions inside', () => {
+
+        class BaseComponent extends Component {
+            template() { return `PREFIX-{$content || DEFAULT-CONTENT}-SUFFIX-ENDING`}
+        }
+
+        class IncludeComponent extends Component {
+            template() { return `INCLUDED-CONTENT`; }
+        }
+
+        class RebasedComponent extends Component {
+            template() {
+                return `{
+                    rebuild:base_template with
+                    {content: !{include:include_template}!}
+                }`;
+            }
+        }
+
+        let rebasedComponent = app.component(
+            RebasedComponent, {},
+            {"base_template": BaseComponent, "include_template": IncludeComponent}
+        );
+        assert.equal('PREFIX-!INCLUDED-CONTENT!-SUFFIX-ENDING', rebasedComponent.render());
+    });
+
 });

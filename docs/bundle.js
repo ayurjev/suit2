@@ -52,7 +52,7 @@ var Variables = function (_Component) {
 
 exports.default = Variables;
 
-},{"../../src/classes/Component":13}],2:[function(require,module,exports){
+},{"../../src/classes/Component":14}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -90,7 +90,7 @@ var AboutMenu = function (_Component) {
 
 exports.default = AboutMenu;
 
-},{"../../src/classes/Component":13}],3:[function(require,module,exports){
+},{"../../src/classes/Component":14}],3:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -128,7 +128,7 @@ var DocsMenu = function (_Component) {
 
 exports.default = DocsMenu;
 
-},{"../../src/classes/Component":13}],4:[function(require,module,exports){
+},{"../../src/classes/Component":14}],4:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -166,7 +166,7 @@ var TopMenu = function (_Component) {
 
 exports.default = TopMenu;
 
-},{"../../src/classes/Component":13}],5:[function(require,module,exports){
+},{"../../src/classes/Component":14}],5:[function(require,module,exports){
 "use strict";
 
 var _Application = require("../src/classes/Application");
@@ -178,7 +178,8 @@ new _Application.Application({
     "/about/features": require("./pages/About/Features"),
     "/contact/": require("./pages/Contact"),
     "/docs/": require("./pages/Docs"),
-    "/docs/<subject>/": require("./pages/Docs")
+    "/docs/<subject>/": require("./pages/Docs"),
+    "/pg/": require("./pages/Pg")
 }, {
     "baseDir": "/suit2"
 }, {
@@ -188,7 +189,7 @@ new _Application.Application({
     "DocsMenu": require("./blocks/DocsMenu")
 });
 
-},{"../src/classes/Application":12,"./blocks/AboutMenu":2,"./blocks/DocsMenu":3,"./blocks/TopMenu":4,"./layouts/Bootstrap":6,"./pages/About/Features":7,"./pages/About/Motivation":8,"./pages/Contact":9,"./pages/Docs":10,"./pages/Title":11}],6:[function(require,module,exports){
+},{"../src/classes/Application":13,"./blocks/AboutMenu":2,"./blocks/DocsMenu":3,"./blocks/TopMenu":4,"./layouts/Bootstrap":6,"./pages/About/Features":7,"./pages/About/Motivation":8,"./pages/Contact":9,"./pages/Docs":10,"./pages/Pg":11,"./pages/Title":12}],6:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -226,7 +227,7 @@ var Bootstrap = function (_Component) {
 
 exports.default = Bootstrap;
 
-},{"../../src/classes/Component":13}],7:[function(require,module,exports){
+},{"../../src/classes/Component":14}],7:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -265,7 +266,7 @@ var FeaturesPage = function (_Component) {
 exports.default = FeaturesPage;
 ;
 
-},{"../../../src/classes/Component":13}],8:[function(require,module,exports){
+},{"../../../src/classes/Component":14}],8:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -303,7 +304,7 @@ var MotivationPage = function (_Component) {
 
 exports.default = MotivationPage;
 
-},{"../../../src/classes/Component":13}],9:[function(require,module,exports){
+},{"../../../src/classes/Component":14}],9:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -346,7 +347,7 @@ var ContactPage = function (_Component) {
 
 exports.default = ContactPage;
 
-},{"../../src/classes/Component":13}],10:[function(require,module,exports){
+},{"../../src/classes/Component":14}],10:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -384,6 +385,7 @@ var DocsPage = function (_Component) {
 
             switch (this.state.request.subject) {
                 case "variables":
+                    this.state.caption = "Variables";
                     this.state.content = this.variables.render();
                     break;
                 default:
@@ -397,7 +399,96 @@ var DocsPage = function (_Component) {
 
 exports.default = DocsPage;
 
-},{"../../src/classes/Component":13,"../articles/Variables":1}],11:[function(require,module,exports){
+},{"../../src/classes/Component":14,"../articles/Variables":1}],11:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _Component3 = require("../../src/classes/Component");
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var Button = function (_Component) {
+    _inherits(Button, _Component);
+
+    function Button() {
+        _classCallCheck(this, Button);
+
+        return _possibleConstructorReturn(this, (Button.__proto__ || Object.getPrototypeOf(Button)).apply(this, arguments));
+    }
+
+    _createClass(Button, [{
+        key: "template",
+        value: function template() {
+            return "<button>Should say '$text'</button>";
+        }
+    }, {
+        key: "createListeners",
+        value: function createListeners() {
+            var _this2 = this;
+
+            this.tag().addEventListener("click", function () {
+                _this2.broadcast("BUTTON_CLICKED", { text: _this2.state.text });
+            });
+        }
+    }]);
+
+    return Button;
+}(_Component3.Component);
+
+var PgPage = function (_Component2) {
+    _inherits(PgPage, _Component2);
+
+    function PgPage() {
+        _classCallCheck(this, PgPage);
+
+        return _possibleConstructorReturn(this, (PgPage.__proto__ || Object.getPrototypeOf(PgPage)).apply(this, arguments));
+    }
+
+    _createClass(PgPage, [{
+        key: "template",
+        value: function template() {
+            return "{\n            rebuild:Bootstrap with\n            {caption: Playground},\n            {content:\n                <button id=\"element-inside-html\">Should say 'element-inside-html' and then 'button'</button>\n                <button>Should say 'button' and only once</button>\n                {include:Button}\n            }\n        }";
+        }
+    }, {
+        key: "init",
+        value: function init() {
+            this.includes.Button = this.component(Button);
+        }
+    }, {
+        key: "createListeners",
+        value: function createListeners() {
+
+            this.elem("#element-inside-html").addEventListener("click", function () {
+                alert(this.id);
+            });
+
+            this.elems("button").forEach(function (b) {
+                b.addEventListener("click", function () {
+                    alert(this.tagName);
+                });
+            });
+
+            this.subscribe("BUTTON_CLICKED", function (e) {
+                alert(e.text);
+            });
+        }
+    }]);
+
+    return PgPage;
+}(_Component3.Component);
+
+exports.default = PgPage;
+
+},{"../../src/classes/Component":14}],12:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -441,7 +532,7 @@ var TitlePage = function (_Component) {
 
 exports.default = TitlePage;
 
-},{"../../src/classes/Component":13}],12:[function(require,module,exports){
+},{"../../src/classes/Component":14}],13:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -733,14 +824,17 @@ var Application = function () {
 
 exports.Application = Application;
 
-},{"./Component":13,"./ComponentRuntime":14,"./Exceptions":15,"./Helpers":17,"./Routing":18}],13:[function(require,module,exports){
+},{"./Component":14,"./ComponentRuntime":15,"./Exceptions":16,"./Helpers":18,"./Routing":19}],14:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+exports.Component = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _Exceptions = require('./Exceptions');
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -758,22 +852,22 @@ var Component = exports.Component = function () {
         this.state = state || {};
         this.includes = includes || {};
 
-        this.compileTemplate();
+        var template;
+        try {
+            if (window) {
+                template = '<component id="' + this.uid + '">' + this.template() + '</component>';
+            }
+        } catch (ReferenceError) {
+            template = this.template();
+        }
+
+        this.template = this.compileTemplate(template);
         this.init();
     }
 
     _createClass(Component, [{
         key: 'compileTemplate',
-        value: function compileTemplate() {
-            var template;
-            try {
-                if (window) {
-                    template = '<component id="' + this.uid + '">' + this.template() + '</component>';
-                }
-            } catch (ReferenceError) {
-                template = this.template();
-            }
-
+        value: function compileTemplate(template) {
             template = template.replace(/\s\s+/mig, " ").trim();
 
             template = this.app.chunks(template, function (to_compile) {
@@ -781,7 +875,7 @@ var Component = exports.Component = function () {
                     return "`+this.exp(`" + s + "`)+`";
                 });
             });
-            this.template = function () {
+            return function () {
                 return eval('() => { return `' + template + '`}')().replace(/\s\s+/mig, " ");
             };
         }
@@ -798,13 +892,6 @@ var Component = exports.Component = function () {
                 return t;
             }
             return this.app.component(t, Object.assign({}, this.app.deepClone(this.state), additional_scope || {}));
-        }
-    }, {
-        key: 'tag',
-        value: function tag() {
-            try {
-                return document.getElementById(this.uid);
-            } catch (e) {}
         }
     }, {
         key: 'subscribe',
@@ -825,6 +912,28 @@ var Component = exports.Component = function () {
     }, {
         key: 'template',
         value: function template() {}
+    }, {
+        key: 'tag',
+        value: function tag() {
+            return document.getElementById(this.uid);
+        }
+    }, {
+        key: 'ui',
+        value: function ui(selector) {
+            return found.length == 1 ? found[0] : found;
+        }
+    }, {
+        key: 'elem',
+        value: function elem(selector) {
+            var found = this.tag().querySelectorAll(selector);
+            if (found.length > 1) throw new _Exceptions.AmbigiousDomRequest("More than one element found with request elem('" + selector + "')");
+            return found.length > 0 ? found[0] : null;
+        }
+    }, {
+        key: 'elems',
+        value: function elems(selector) {
+            return this.tag().querySelectorAll(selector);
+        }
 
         /**
          * Refreshing component in DOM
@@ -879,7 +988,7 @@ var Component = exports.Component = function () {
     return Component;
 }();
 
-},{}],14:[function(require,module,exports){
+},{"./Exceptions":16}],15:[function(require,module,exports){
 "use strict";
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -1109,11 +1218,12 @@ _Component.Component.prototype.include = function (expression, additional_scope,
 /**
  * Building scope from string and iteration data
  */
-_Component.Component.prototype.scope = function (data, additional_scope, iternum) {
+_Component.Component.prototype.scope = function (data, additional_scope, iternum, stateOverData) {
     if (data.indexOf("[") == 0 || data.indexOf("{") == 0) {
         data = JSON.parse(this.var(data, additional_scope, iternum));
     } else data = this.extract(data);
-    return Object.assign({}, this.app.deepClone(this.state), data);
+
+    return stateOverData ? Object.assign({}, data, this.app.deepClone(this.state)) : Object.assign({}, this.app.deepClone(this.state), data);
 };
 
 /**
@@ -1126,7 +1236,7 @@ _Component.Component.prototype.include_with = function (expression, additional_s
             template = _expression$match4[1],
             data = _expression$match4[2];
 
-        additional_scope = this.scope(data, additional_scope, iternum);
+        additional_scope = this.scope(data, additional_scope, iternum, false);
         expression = template;
     }
     return this.include(expression, additional_scope, iternum);
@@ -1136,6 +1246,8 @@ _Component.Component.prototype.include_with = function (expression, additional_s
  *  Generating new component using other component as a template
  */
 _Component.Component.prototype.rebuild = function (expression, additional_scope, iternum) {
+    var _this2 = this;
+
     var _expression$match5 = expression.match(/rebuild:(.+?) with\s(.+?)$/),
         _expression$match6 = _slicedToArray(_expression$match5, 3),
         template = _expression$match6[1],
@@ -1145,22 +1257,22 @@ _Component.Component.prototype.rebuild = function (expression, additional_scope,
         data = JSON.parse(data);
     } catch (e) {
         var parsedData = {};
-        data.replace(/{(.+?):(.+?)}/ig, function (match, key, content) {
-            parsedData[key] = content;
+        this.app.chunks(data, function (chunk) {
+            chunk.replace(/{(.+?):(.+)}/ig, function (match, key, content) {
+                parsedData[key] = _this2.compileTemplate(content).call(_this2);
+            });
         });
         data = parsedData;
     }
 
     for (var item in data) {
-        var scope = Object.assign({}, this.app.deepClone(this.state), additional_scope);
         data[item] = this.exp(data[item]);
     }
     data = JSON.stringify(data);
-
-    return this.include(template, this.scope(data, additional_scope, iternum), iternum);
+    return this.include(template, this.scope(data, additional_scope, iternum, true), iternum);
 };
 
-},{"./Component":13,"./Exceptions":15,"./Filters":16}],15:[function(require,module,exports){
+},{"./Component":14,"./Exceptions":16,"./Filters":17}],16:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1168,6 +1280,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.UnbalancedBracketsError = UnbalancedBracketsError;
 exports.ComponentNotFoundError = ComponentNotFoundError;
+exports.AmbigiousDomRequest = AmbigiousDomRequest;
 function UnbalancedBracketsError(message) {
   this.message = message || "";
 }
@@ -1178,7 +1291,12 @@ function ComponentNotFoundError(message) {
 }
 ComponentNotFoundError.prototype = new Error();
 
-},{}],16:[function(require,module,exports){
+function AmbigiousDomRequest(message) {
+  this.message = message || "";
+}
+AmbigiousDomRequest.prototype = new Error();
+
+},{}],17:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1330,7 +1448,7 @@ var Filters = exports.Filters = function () {
     return Filters;
 }();
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 'use strict';
 
 /**
@@ -1354,7 +1472,7 @@ String.prototype.trimAll = function (mask) {
     return s;
 };
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {

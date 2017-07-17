@@ -193,12 +193,15 @@ Component.prototype.include = function(expression, additional_scope, iternum) {
 /**
  * Building scope from string and iteration data
  */
-Component.prototype.scope = function(data, additional_scope, iternum) {
+Component.prototype.scope = function(data, additional_scope, iternum, stateOverData) {
     if (data.indexOf("[") == 0 || data.indexOf("{") == 0) {
         data = JSON.parse(this.var(data, additional_scope, iternum));
     }
     else data = this.extract(data);
-    return Object.assign({}, this.app.deepClone(this.state), data);
+
+    return stateOverData
+            ? Object.assign({}, data, this.app.deepClone(this.state))
+            : Object.assign({}, this.app.deepClone(this.state), data);
 }
 
 /**
@@ -207,7 +210,7 @@ Component.prototype.scope = function(data, additional_scope, iternum) {
 Component.prototype.include_with = function(expression, additional_scope, iternum) {
     if (expression.indexOf("with") > -1) {
         let [,template,data] = expression.match(/include:(.+?) with\s(.+?)$/);
-        additional_scope = this.scope(data, additional_scope, iternum);
+        additional_scope = this.scope(data, additional_scope, iternum, false);
         expression = template;
     }
     return this.include(expression, additional_scope, iternum);
@@ -223,17 +226,15 @@ Component.prototype.rebuild = function(expression, additional_scope, iternum) {
         data = JSON.parse(data);
     } catch (e) {
         var parsedData = {};
-        data.replace(/{(.+?):(.+?)}/ig, (match, key, content) => {
-            parsedData[key] = content;
+        this.app.chunks(data, (chunk) => {
+            chunk.replace(/{(.+?):(.+)}/ig, (match, key, content) => {
+                parsedData[key] = this.compileTemplate(content).call(this);
+            });
         });
         data = parsedData;
     }
 
-    for (var item in data) {
-        var scope = Object.assign({}, this.app.deepClone(this.state), additional_scope)
-        data[item] = this.exp(data[item]);
-    }
+    for (var item in data) { data[item] = this.exp(data[item]); }
     data = JSON.stringify(data);
-
-    return this.include(template, this.scope(data, additional_scope, iternum), iternum);
+    return this.include(template, this.scope(data, additional_scope, iternum, true), iternum);
 }

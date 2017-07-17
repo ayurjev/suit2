@@ -11,6 +11,7 @@ new Application(
         "/contact/": require("./pages/Contact"),
         "/docs/": require("./pages/Docs"),
         "/docs/<subject>/": require("./pages/Docs"),
+        "/pg/": require("./pages/Pg")
     },
     {
         "baseDir": "/suit2"
