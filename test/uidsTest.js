@@ -46,7 +46,6 @@ describe('Compiler', () => {
 
     it('should create correct component after rebuild operation', () => {
         let parent = app.createComponent(Parent, {}, {"Page": Page, "Button": Button, "Button2": Button2});
-        parent.render();
 
         assert.equal("rootUID.Parent[0]", parent.uid);
         assert.equal(3, parent.components().length);
@@ -56,7 +55,6 @@ describe('Compiler', () => {
 
     it('should create components with different uid even if they being created from the same source class', () => {
         let parent = app.createComponent(Parent, {}, {"Page": Page, "Button": Button, "Button2": Button2});
-        //parent.render();
 
         assert.equal(3, parent.components().length);
         assert.equal(2, parent.components(Button).length);
@@ -71,7 +69,6 @@ describe('Compiler', () => {
 
     it('should keep uids even if component gets refreshed, and state of child components should remain', () => {
         let parent = app.createComponent(Parent, {}, {"Page": Page, "Button": Button, "Button2": Button2});
-        parent.render();
 
         var button1_uid = parent.components(Button)[0].uid;
         var button2_uid = parent.components(Button)[1].uid;
@@ -98,7 +95,5 @@ describe('Compiler', () => {
         assert.equal("Button2 instance 1", parent.components(Button2)[0].api.getText());
 
     });
-
-
 
 });
