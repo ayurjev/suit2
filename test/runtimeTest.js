@@ -33,12 +33,11 @@ describe('Component', () => {
             }
             init() {
                 this.includes = {"test_inclusion": TestInclusion};
-                this.api.get_test_inclusion = () => { return this.components(TestInclusion)[0]; }
+                this.api.get_test_inclusion = () => { return this.component(TestInclusion); }
             }
         }
 
         let component = app.createComponent(TestComponent);
-        component.render();
 
         assert(component.getApi()["init"] instanceof Function);
         assert(component.getApi()["uid"] instanceof Function);
@@ -99,7 +98,7 @@ describe('Component', () => {
                 };
 
                 this.api.change_child = () => {
-                    this.components(TestInclusion)[0].getApi().change("Nikolay", 32);
+                    this.component(TestInclusion).getApi().change("Nikolay", 32);
                 };
             }
         }

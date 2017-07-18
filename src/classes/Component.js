@@ -39,10 +39,6 @@ export class Component {
     setState(state) { this.state = state; }
 
     createComponent(t, additional_scope, iternum) {
-        // if (t instanceof Component) {
-        //     t.setState(Object.assign({}, t.state, this.app.deepClone(this.state), additional_scope || {}))
-        //     return t;
-        // }
         var component = this.app.createComponent(t, Object.assign({}, this.app.deepClone(this.state), additional_scope || {}), {}, this);
         this.childs.push(component);
         return component;
@@ -78,9 +74,7 @@ export class Component {
         if (!type) return this.childs;
         type = type.default || type;
         var filtered = [];
-        this.childs.forEach((c) => {
-            if (c.constructor.name == (new (type)).constructor.name) filtered.push(c);
-        });
+        this.childs.forEach((c) => { if (c.constructor.name == (new (type)).constructor.name) filtered.push(c); });
         return filtered;
     }
 

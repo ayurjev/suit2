@@ -131,6 +131,7 @@ export class Application {
             this
         );
         this.instances[uid] = component;
+        component.render();
         return this.instances[uid];
     }
 

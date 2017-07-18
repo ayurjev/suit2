@@ -145,6 +145,8 @@ Component.prototype.list = function(expression, additional_scope, iternum) {
     if (iterable.indexOf("[") == 0 || iterable.indexOf("{") == 0) iterable = JSON.parse(iterable);
     else iterable = this.extract(iterable);
 
+    if (!iterable) return "";
+
     var out = "";
     var that = this;
 

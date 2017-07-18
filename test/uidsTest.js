@@ -56,7 +56,7 @@ describe('Compiler', () => {
 
     it('should create components with different uid even if they being created from the same source class', () => {
         let parent = app.createComponent(Parent, {}, {"Page": Page, "Button": Button, "Button2": Button2});
-        parent.render();
+        //parent.render();
 
         assert.equal(3, parent.components().length);
         assert.equal(2, parent.components(Button).length);
