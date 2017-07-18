@@ -81,19 +81,28 @@ describe('Compiler', () => {
 
         parent.components(Button)[0].state.text = "Button instance 1";
         parent.components(Button)[1].state.text = "Button instance 2";
-        parent.components(Button2)[0].state.text = "Button2 instance 1";
+        parent.component(Button2).state.text = "Button2 instance 1";
+        parent.component(Button2).state.extra = "BINGO";
+
         assert.equal("DEFAULT TEXT FOR PARENT COMPONENT", parent.api.getText());
         assert.equal("Button instance 1", parent.components(Button)[0].api.getText());
         assert.equal("Button instance 2", parent.components(Button)[1].api.getText());
         assert.equal("Button2 instance 1", parent.components(Button2)[0].api.getText());
+        assert.equal("BINGO", parent.components(Button2)[0].state.extra);
 
         parent.state.text = "NEW TEXT FOR PARENT COMPONENT";
-        parent.refresh();
+        parent.render();
         assert.equal("NEW TEXT FOR PARENT COMPONENT", parent.api.getText());
-        assert.equal("Button instance 1", parent.components(Button)[0].api.getText());
-        assert.equal("Button instance 2", parent.components(Button)[1].api.getText());
-        assert.equal("Button2 instance 1", parent.components(Button2)[0].api.getText());
-
+        // inherited state updated in all childs components:
+        assert.equal("NEW TEXT FOR PARENT COMPONENT", parent.components(Button)[0].api.getText());
+        assert.equal("NEW TEXT FOR PARENT COMPONENT", parent.components(Button)[1].api.getText());
+        assert.equal("NEW TEXT FOR PARENT COMPONENT", parent.components(Button2)[0].api.getText());
+        // extra state remained in child's state:
+        assert.equal("BINGO", parent.components(Button2)[0].state.extra);
+        // all the uids remain the same:
+        assert.equal(button1_uid, parent.components(Button)[0].uid);
+        assert.equal(button2_uid, parent.components(Button)[1].uid);
+        assert.equal(button3_uid, parent.components(Button2)[0].uid);
     });
 
 });
