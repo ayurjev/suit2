@@ -15,7 +15,7 @@ describe('Compiler', () => {
                 return 'His name is <b>{$user.name}</b> and he is {$user.age years old';
             }
         }
-        assert.throws(() => { app.component(TestComponent) }, UnbalancedBracketsError);
+        assert.throws(() => { app.createComponent(TestComponent) }, UnbalancedBracketsError);
     });
 
     it('should tell us if we forgot to define includes correctly', () => {
@@ -25,7 +25,7 @@ describe('Compiler', () => {
             }
         }
         assert.throws(() => {
-            let component = app.component(
+            let component = app.createComponent(
                 TestComponent,
                 {}, // state is empty, doesn't matter...
                 {}, // includes are empty, so no bootstrap widget can be found...

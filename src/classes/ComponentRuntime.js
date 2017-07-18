@@ -7,7 +7,6 @@ import {ComponentNotFoundError} from "./Exceptions";
  *  Executing template engine expression - {}
  */
 Component.prototype.exp = function(source, additional_scope, iternum) {
-
     try                 { source = source.trim(); }
     catch (TypeError)   { return ""; }
 
@@ -140,7 +139,6 @@ Component.prototype.ternary = function(var_name, additional_scope, iternum) {
 Component.prototype.list = function(expression, additional_scope, iternum) {
 
     let [,iterkey,iterable,itertemplate] = expression.match(/for (.+?) in (.+?)\s(.+?)$/);
-
     itertemplate = itertemplate.replace(/\s\s+/mig, " ").trim();
     iterkey = iterkey.replace("$", "");
 
@@ -175,7 +173,6 @@ Component.prototype.list = function(expression, additional_scope, iternum) {
  */
 Component.prototype.include = function(expression, additional_scope, iternum) {
     expression = expression.replace("include:", "").trim();
-
     if (expression.indexOf("$") == 0) expression = this.extract(expression);
 
     var t = this.includes[expression] || this.app.global_includes[expression];
@@ -185,7 +182,7 @@ Component.prototype.include = function(expression, additional_scope, iternum) {
         throw new ComponentNotFoundError("Component '" + expression + "' not found");
     };
 
-    var component = this.component(t, additional_scope, iternum);
+    var component = this.createComponent(t, additional_scope, iternum);
 
     return component.render();
 }
@@ -221,7 +218,6 @@ Component.prototype.include_with = function(expression, additional_scope, iternu
  */
 Component.prototype.rebuild = function(expression, additional_scope, iternum) {
     let [,template,data] = expression.match(/rebuild:(.+?) with\s(.+?)$/);
-
     try {
         data = JSON.parse(data);
     } catch (e) {
@@ -235,6 +231,16 @@ Component.prototype.rebuild = function(expression, additional_scope, iternum) {
     }
 
     for (var item in data) { data[item] = this.exp(data[item]); }
+    var objdata = data;
     data = JSON.stringify(data);
-    return this.include(template, this.scope(data, additional_scope, iternum, true), iternum);
+
+    var t = this.includes[template] || this.app.global_includes[template];
+
+    if (!t) {
+        throw new ComponentNotFoundError("Component '" + expression + "' not found");
+    };
+
+    var component = this.app.createComponent(t, this.scope(data, additional_scope, iternum, true), this.includes, null);
+    return component.render();
+
 }

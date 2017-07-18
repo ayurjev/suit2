@@ -105,46 +105,41 @@ export class Application {
                 if (next_start > -1) start = p + next_start + 1;
                 else start = -1;
 
-                repl[to_compile] = compiled;
+                if (!repl[to_compile]) repl[to_compile] = [compiled];
+                else repl[to_compile].push(compiled);
             }
 
-            for (to_compile in repl) { template = template.replace(to_compile, repl[to_compile]); }
+            for (to_compile in repl) {
+                for (var i in repl[to_compile]) {
+                    template = template.replace(to_compile, repl[to_compile][i]);
+                }
+            }
 
             return template;
     }
 
     /**
-     * Generating UID for widgets (with cache)
-     */
-    generateUID(t) {
-        // TODO: it is not good idea to use the whole temlate as a key...
-        // We should use a hash, but there is no md5 function in raw js
-        var obj = t.default || t;
-        if (this.uids_cache[obj.toString()]) return this.uids_cache[obj.toString()];
-        else {
-            var p = () => { return ("000" + ((Math.random() * 46656) | 0).toString(36)).slice(-3) };
-            var uid = p() + p();
-            this.uids_cache[obj.toString()] = uid;
-            return uid;
-        }
-    }
-
-    /**
      *  Compiling js-module into Component-instance
      */
-    component(t, state, includes) {
-        var uid = this.generateUID(t);
+    createComponent(t, state, includes, parentComponent) {
+        var uid = this.generateUID(t, parentComponent);
         var prev_state = this.instances[uid] ? this.instances[uid].state : {};
-
         var component = new (t.default || t)(
             uid,
             Object.assign(prev_state || {}, state || {}),
             Object.assign({}, includes || {}),
             this
         );
-
         this.instances[uid] = component;
         return this.instances[uid];
+    }
+
+    /**
+     * Generating UID for widgets (with cache)
+     */
+    generateUID(t, parentComponent) {
+        var obj = t.default || t;
+        return (parentComponent ? parentComponent.uid : "rootUID") + "." + (new obj).constructor.name + "[" + (parentComponent ? parentComponent.components(obj).length : 0) + "]";
     }
 
     /**

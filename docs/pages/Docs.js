@@ -14,12 +14,12 @@ export default class DocsPage extends Component {
     }
 
     init () {
-        this.variables = this.component(require("../articles/Variables"));
+        this.variables = this.createComponent(require("../articles/Variables"));
 
         switch (this.state.request.subject) {
             case "variables":
                 this.state.caption = "Variables";
-                this.state.content = this.variables.render();
+                this.state.content = this.variables.render();    
                 break;
             default:
                 this.state.content = `<p>Under development</p>`;

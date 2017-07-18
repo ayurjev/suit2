@@ -3,7 +3,7 @@ import {Component} from "../../src/classes/Component";
 
 class Button extends Component {
     template() {
-        return `<button>Should say '$text'</button>`;
+        return `<button>{$text}</button>`;
     }
     createListeners() {
         this.tag().addEventListener("click", () => {
@@ -21,13 +21,14 @@ export default class PgPage extends Component {
             {content:
                 <button id="element-inside-html">Should say 'element-inside-html' and then 'button'</button>
                 <button>Should say 'button' and only once</button>
-                {include:Button}
+                {include:Button with {"text": "Should say 'button' and then 'Im a child component'"}}
+                {include:Button with {"text": "Should say 'button' and then 'Im a child component too!'"}}
             }
         }`
     }
 
     init () {
-        this.includes.Button = this.component(Button);
+        this.includes.Button = Button;
     }
 
     createListeners() {

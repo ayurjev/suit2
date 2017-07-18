@@ -37,7 +37,7 @@ export class ControllerFactory {
         // Fast Access Controller (full match)
         let fast_acs_controller = this.router[url];
         if (fast_acs_controller != null)
-        return this.app.component(fast_acs_controller, Object.assign({}, this.app.config, {"request": {}}));
+        return this.app.createComponent(fast_acs_controller, Object.assign({}, this.app.config, {"request": {}}));
 
         // Searching for best option:
         var best_controller = null;
@@ -56,7 +56,7 @@ export class ControllerFactory {
             }
         };
         if (best_controller) {
-            return this.app.component(best_controller, Object.assign({}, this.app.config, {"request": best_controller_request}));
+            return this.app.createComponent(best_controller, Object.assign({}, this.app.config, {"request": best_controller_request}));
         }
         throw new Error("404 NotFound")
     }

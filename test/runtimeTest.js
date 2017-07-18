@@ -25,14 +25,20 @@ describe('Component', () => {
     it('should convert internal inclusions into components api', () => {
 
         class TestComponent extends Component {
-            template() { return "His name is <b>{$user.name}</b> and he is {$user.age} years old"}
+            template() {
+                return `
+                    His name is <b>{$user.name}</b> and he is {$user.age} years old
+                    {include:test_inclusion}
+                `
+            }
             init() {
-                this.includes = {"test_inclusion": this.component(TestInclusion)};
-                this.api.get_test_inclusion = () => { return this.includes.test_inclusion; }
+                this.includes = {"test_inclusion": TestInclusion};
+                this.api.get_test_inclusion = () => { return this.components(TestInclusion)[0]; }
             }
         }
 
-        let component = app.component(TestComponent);
+        let component = app.createComponent(TestComponent);
+        component.render();
 
         assert(component.getApi()["init"] instanceof Function);
         assert(component.getApi()["uid"] instanceof Function);
@@ -43,7 +49,9 @@ describe('Component', () => {
     it('should allow us to change its state and refresh it from inside', () => {
 
         class TestComponent extends Component {
-            template() { return "His name is <b>{$user.name}</b> and he is {$user.age} years old"}
+            template() {
+                return `His name is <b>{$user.name}</b> and he is {$user.age} years old`
+            }
             init() {
                 this.api.change = () => {
                     this.state.user.name = "Andrey";
@@ -53,7 +61,7 @@ describe('Component', () => {
             }
         }
 
-        let component = app.component(TestComponent);
+        let component = app.createComponent(TestComponent);
 
         // check component's api:
         assert(component.getApi()["init"] instanceof Function);
@@ -71,7 +79,7 @@ describe('Component', () => {
         assert.equal('His name is <b>Andrey</b> and he is 28 years old', component.render());
     });
 
-    it('should share state between components if componentr configured to work with shared state', () => {
+    it('should share state between components if component configured to work with shared state', () => {
         let sharedStateApp = new Application({}, {state: "shared"});
 
         class TestComponent extends Component {
@@ -82,7 +90,7 @@ describe('Component', () => {
                 `
             }
             init() {
-                this.includes = {"test_inclusion": this.component(TestInclusion)};
+                this.includes = {"test_inclusion": TestInclusion};
 
                 this.api.change_parent = () => {
                     this.state.user.name = "Andrey";
@@ -91,12 +99,12 @@ describe('Component', () => {
                 };
 
                 this.api.change_child = () => {
-                    this.includes.test_inclusion.getApi().change("Nikolay", 32);
+                    this.components(TestInclusion)[0].getApi().change("Nikolay", 32);
                 };
             }
         }
 
-        let component = sharedStateApp.component(TestComponent);
+        let component = sharedStateApp.createComponent(TestComponent);
 
         // no state at all:
         assert.equal(
@@ -136,14 +144,14 @@ describe('Component', () => {
                 `
             }
             init() {
-                this.includes = {"test_inclusion": this.component(TestInclusion)};
+                this.includes = {"test_inclusion": TestInclusion};
 
                 this.api.get_state_from_parent = () => {
                     return this.state;
                 }
 
                 this.api.get_state_from_child = () => {
-                    return this.includes.test_inclusion.getApi().get_state();
+                    return this.component(TestInclusion).getApi().get_state();
                 }
 
                 this.api.change_parent = () => {
@@ -153,12 +161,12 @@ describe('Component', () => {
                 }
 
                 this.api.change_child = () => {
-                    this.includes.test_inclusion.getApi().change("Nikolay", 32);
+                    this.component(TestInclusion).getApi().change("Nikolay", 32);
                 }
             }
         }
 
-        let component = localStateApp.component(TestComponent);
+        let component = localStateApp.createComponent(TestComponent);
 
         // no state at all:
         assert.equal(
@@ -222,7 +230,7 @@ describe('Component', () => {
             }
         }
 
-        let component = app.component(TestComponent, {}, {"BaseComponent": BaseComponent});
+        let component = app.createComponent(TestComponent, {}, {"BaseComponent": BaseComponent});
 
         assert.equal("InitLevelCaption:InitLevelContent", component.render())
 

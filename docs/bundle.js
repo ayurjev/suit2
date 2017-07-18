@@ -381,7 +381,7 @@ var DocsPage = function (_Component) {
     }, {
         key: "init",
         value: function init() {
-            this.variables = this.component(require("../articles/Variables"));
+            this.variables = this.createComponent(require("../articles/Variables"));
 
             switch (this.state.request.subject) {
                 case "variables":
@@ -428,7 +428,7 @@ var Button = function (_Component) {
     _createClass(Button, [{
         key: "template",
         value: function template() {
-            return "<button>Should say '$text'</button>";
+            return "<button>{$text}</button>";
         }
     }, {
         key: "createListeners",
@@ -456,12 +456,12 @@ var PgPage = function (_Component2) {
     _createClass(PgPage, [{
         key: "template",
         value: function template() {
-            return "{\n            rebuild:Bootstrap with\n            {caption: Playground},\n            {content:\n                <button id=\"element-inside-html\">Should say 'element-inside-html' and then 'button'</button>\n                <button>Should say 'button' and only once</button>\n                {include:Button}\n            }\n        }";
+            return "{\n            rebuild:Bootstrap with\n            {caption: Playground},\n            {content:\n                <button id=\"element-inside-html\">Should say 'element-inside-html' and then 'button'</button>\n                <button>Should say 'button' and only once</button>\n                {include:Button with {\"text\": \"Should say 'button' and then 'Im a child component'\"}}\n                {include:Button with {\"text\": \"Should say 'button' and then 'Im a child component too!'\"}}\n            }\n        }";
         }
     }, {
         key: "init",
         value: function init() {
-            this.includes.Button = this.component(Button);
+            this.includes.Button = Button;
         }
     }, {
         key: "createListeners",
@@ -668,14 +668,30 @@ var Application = function () {
                 var next_start = template.slice(p + 1, template.length).indexOf("{");
                 if (next_start > -1) start = p + next_start + 1;else start = -1;
 
-                repl[to_compile] = compiled;
+                if (!repl[to_compile]) repl[to_compile] = [compiled];else repl[to_compile].push(compiled);
             }
 
             for (to_compile in repl) {
-                template = template.replace(to_compile, repl[to_compile]);
+                for (var i in repl[to_compile]) {
+                    template = template.replace(to_compile, repl[to_compile][i]);
+                }
             }
 
             return template;
+        }
+
+        /**
+         *  Compiling js-module into Component-instance
+         */
+
+    }, {
+        key: "createComponent",
+        value: function createComponent(t, state, includes, parentComponent) {
+            var uid = this.generateUID(t, parentComponent);
+            var prev_state = this.instances[uid] ? this.instances[uid].state : {};
+            var component = new (t.default || t)(uid, Object.assign(prev_state || {}, state || {}), Object.assign({}, includes || {}), this);
+            this.instances[uid] = component;
+            return this.instances[uid];
         }
 
         /**
@@ -684,34 +700,9 @@ var Application = function () {
 
     }, {
         key: "generateUID",
-        value: function generateUID(t) {
-            // TODO: it is not good idea to use the whole temlate as a key...
-            // We should use a hash, but there is no md5 function in raw js
+        value: function generateUID(t, parentComponent) {
             var obj = t.default || t;
-            if (this.uids_cache[obj.toString()]) return this.uids_cache[obj.toString()];else {
-                var p = function p() {
-                    return ("000" + (Math.random() * 46656 | 0).toString(36)).slice(-3);
-                };
-                var uid = p() + p();
-                this.uids_cache[obj.toString()] = uid;
-                return uid;
-            }
-        }
-
-        /**
-         *  Compiling js-module into Component-instance
-         */
-
-    }, {
-        key: "component",
-        value: function component(t, state, includes) {
-            var uid = this.generateUID(t);
-            var prev_state = this.instances[uid] ? this.instances[uid].state : {};
-
-            var component = new (t.default || t)(uid, Object.assign(prev_state || {}, state || {}), Object.assign({}, includes || {}), this);
-
-            this.instances[uid] = component;
-            return this.instances[uid];
+            return (parentComponent ? parentComponent.uid : "rootUID") + "." + new obj().constructor.name + "[" + (parentComponent ? parentComponent.components(obj).length : 0) + "]";
         }
 
         /**
@@ -845,24 +836,26 @@ var Component = exports.Component = function () {
     function Component(uid, state, includes, app) {
         _classCallCheck(this, Component);
 
-        this.app = app;
-        this.uid = uid;
+        if (uid) {
+            this.app = app;
+            this.uid = uid;
 
-        this.api = {};
-        this.state = state || {};
-        this.includes = includes || {};
+            this.api = {};
+            this.state = state || {};
+            this.includes = includes || {};
+            this.childs = [];
 
-        var template;
-        try {
-            if (window) {
-                template = '<component id="' + this.uid + '">' + this.template() + '</component>';
+            var template;
+            try {
+                if (window) {
+                    template = '<component id="' + this.uid + '">' + this.template() + '</component>';
+                }
+            } catch (ReferenceError) {
+                template = this.template();
             }
-        } catch (ReferenceError) {
-            template = this.template();
+            this.template = this.compileTemplate(template);
+            this.init();
         }
-
-        this.template = this.compileTemplate(template);
-        this.init();
     }
 
     _createClass(Component, [{
@@ -885,13 +878,15 @@ var Component = exports.Component = function () {
             this.state = state;
         }
     }, {
-        key: 'component',
-        value: function component(t, additional_scope, iternum) {
-            if (t instanceof Component) {
-                t.setState(Object.assign({}, t.state, this.app.deepClone(this.state), additional_scope || {}));
-                return t;
-            }
-            return this.app.component(t, Object.assign({}, this.app.deepClone(this.state), additional_scope || {}));
+        key: 'createComponent',
+        value: function createComponent(t, additional_scope, iternum) {
+            // if (t instanceof Component) {
+            //     t.setState(Object.assign({}, t.state, this.app.deepClone(this.state), additional_scope || {}))
+            //     return t;
+            // }
+            var component = this.app.createComponent(t, Object.assign({}, this.app.deepClone(this.state), additional_scope || {}), {}, this);
+            this.childs.push(component);
+            return component;
         }
     }, {
         key: 'subscribe',
@@ -933,6 +928,25 @@ var Component = exports.Component = function () {
         key: 'elems',
         value: function elems(selector) {
             return this.tag().querySelectorAll(selector);
+        }
+    }, {
+        key: 'components',
+        value: function components(type) {
+            if (!type) return this.childs;
+            type = type.default || type;
+            var filtered = [];
+            this.childs.forEach(function (c) {
+                if (c.constructor.name == new type().constructor.name) filtered.push(c);
+            });
+            return filtered;
+        }
+    }, {
+        key: 'component',
+        value: function component(type) {
+            var components = this.components(type);
+            if (components.length > 1) throw new _Exceptions.AmbigiousDomRequest("More than one component found with request component('" + type + "')");
+            if (components.length == 0) return null;
+            return components[0];
         }
 
         /**
@@ -980,6 +994,7 @@ var Component = exports.Component = function () {
     }, {
         key: 'render',
         value: function render(state) {
+            this.childs = []; // because we will repopulate this prop during render() execution
             this.state = state || this.state;
             return this.template();
         }
@@ -1201,7 +1216,6 @@ _Component.Component.prototype.list = function (expression, additional_scope, it
  */
 _Component.Component.prototype.include = function (expression, additional_scope, iternum) {
     expression = expression.replace("include:", "").trim();
-
     if (expression.indexOf("$") == 0) expression = this.extract(expression);
 
     var t = this.includes[expression] || this.app.global_includes[expression];
@@ -1210,7 +1224,7 @@ _Component.Component.prototype.include = function (expression, additional_scope,
         throw new _Exceptions.ComponentNotFoundError("Component '" + expression + "' not found");
     };
 
-    var component = this.component(t, additional_scope, iternum);
+    var component = this.createComponent(t, additional_scope, iternum);
 
     return component.render();
 };
@@ -1268,8 +1282,17 @@ _Component.Component.prototype.rebuild = function (expression, additional_scope,
     for (var item in data) {
         data[item] = this.exp(data[item]);
     }
+    var objdata = data;
     data = JSON.stringify(data);
-    return this.include(template, this.scope(data, additional_scope, iternum, true), iternum);
+
+    var t = this.includes[template] || this.app.global_includes[template];
+
+    if (!t) {
+        throw new _Exceptions.ComponentNotFoundError("Component '" + expression + "' not found");
+    };
+
+    var component = this.app.createComponent(t, this.scope(data, additional_scope, iternum, true), this.includes, null);
+    return component.render();
 };
 
 },{"./Component":14,"./Exceptions":16,"./Filters":17}],16:[function(require,module,exports){
@@ -1529,7 +1552,7 @@ var ControllerFactory = exports.ControllerFactory = function () {
             url = url.trimAll("/");
             // Fast Access Controller (full match)
             var fast_acs_controller = this.router[url];
-            if (fast_acs_controller != null) return this.app.component(fast_acs_controller, Object.assign({}, this.app.config, { "request": {} }));
+            if (fast_acs_controller != null) return this.app.createComponent(fast_acs_controller, Object.assign({}, this.app.config, { "request": {} }));
 
             // Searching for best option:
             var best_controller = null;
@@ -1548,7 +1571,7 @@ var ControllerFactory = exports.ControllerFactory = function () {
                 }
             };
             if (best_controller) {
-                return this.app.component(best_controller, Object.assign({}, this.app.config, { "request": best_controller_request }));
+                return this.app.createComponent(best_controller, Object.assign({}, this.app.config, { "request": best_controller_request }));
             }
             throw new Error("404 NotFound");
         }
